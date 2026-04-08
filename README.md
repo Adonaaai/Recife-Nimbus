@@ -40,14 +40,3 @@ The database is managed via Prisma and consists of three main models:
 1. `Neighborhood`: Stores the coordinates (lat/lon) of areas to monitor.
 2. `AlertLog`: Keeps an audit trail of every automated alert sent out.
 3. `UserReport`: Stores crowdsourced flood pins reported by the community.
-
----
-
-## 🚀 Getting Started
-
-Follow these steps to run Recife Nimbus locally.
-
-### Prerequisites
-* Node.js (v18 or higher)
-* A free [Supabase](https://supabase.com/) account (or local PostgreSQL database)
-* A Telegram Bot Token (from [BotFather](https://t.me/botfather))
