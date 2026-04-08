@@ -6,6 +6,7 @@
 ./generated/prisma
 # Default node_modules location if not overridden
 node_modules/.prisma
+node_modules
 
 # ==========================================
 # TYPESCRIPT BUILD ARTIFACTS
