@@ -4,7 +4,7 @@
 > ⚠️ **Project Status: In Active Development (WIP)**
 > This project is currently being built. The database schema is defined, and the automated weather fetching is being implemented, but the Telegram bot is not yet live for public use. Expect frequent code changes!
 
-> **An automated, community-driven flood alert system for the Recife Metropolitan Region.**
+ **An automated, community-driven flood alert system for the Recife Metropolitan Region.**
 
 Recife and its surrounding cities (like Camaragibe and Jaboatão) are built across a vast mangrove ecosystem. During the rainy season, the combination of heavy precipitation and high ocean tides (above 2.0m) frequently overwhelms the city's drainage, causing severe urban flooding and displacing residents.
 
