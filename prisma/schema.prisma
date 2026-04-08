@@ -27,14 +27,13 @@ model Media {
 }
 
 model Neighborhood {
-  id int @id @default(autoincrement())
+  id Int @id @default(autoincrement())
   name String
   city String
   region String?
   latitude Float
   longitude Float
   isActive Boolean @default(true)
-  rpa Int
 
   alerts AlertLog[]
 
@@ -43,7 +42,7 @@ model Neighborhood {
 
 model AlertLog {
   id Int @id @default(autoincrement())
-  neighborhoodId String
+  neighborhoodId Int
   rainLevel Float?
   tideLevel Float?
   triggeredAt DateTime @default(now())

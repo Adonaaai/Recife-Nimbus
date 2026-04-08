@@ -22,7 +22,7 @@ CREATE TABLE "Media" (
 
 -- CreateTable
 CREATE TABLE "Neighborhood" (
-    "id" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "city" TEXT NOT NULL,
     "region" TEXT,
@@ -36,7 +36,7 @@ CREATE TABLE "Neighborhood" (
 -- CreateTable
 CREATE TABLE "AlertLog" (
     "id" SERIAL NOT NULL,
-    "neighborhoodId" TEXT NOT NULL,
+    "neighborhoodId" INTEGER NOT NULL,
     "rainLevel" DOUBLE PRECISION,
     "tideLevel" DOUBLE PRECISION,
     "triggeredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

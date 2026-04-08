@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:18.2
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "852123"
+      POSTGRES_DB: "Recife-Nimbus"
+    ports:
+     - "5432:5432"
+    volumes:
+    - postgres:/var/lib/postgresql/data
+
+volumes:
+  postgres:

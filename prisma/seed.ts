@@ -1,3 +1,9 @@
+import 'dotenv/config';
+import { prisma } from '../src/lib/prisma';
+import axios from 'axios';
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 // RECIFE NEIGHBORHOODS (Optimized Centroids & RPA Groups)
 const recifeNeighborhoods = [
     // RPA 1 - CENTRO (The Historic & Administrative Core)
@@ -226,3 +232,82 @@ const rmrCities = [
       ]
     }
   ];
+
+
+async function getCoordinates(neighborhood: string, city: string) {
+  try {
+    const queries = [
+      `${neighborhood}, ${city}, Pernambuco, Brazil`,
+      `Bairro ${neighborhood}, ${city}, Pernambuco, Brazil`,
+      `${neighborhood} - ${city}, Pernambuco, Brazil`,
+      // Fallback for generic/unknown neighborhood names (e.g. "Centro")
+      `${city}, Pernambuco, Brazil`,
+    ];
+
+    for (const query of queries) {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`;
+      const response = await axios.get(url, {
+        headers: { 'User-Agent': 'RecifeNimbus/1.0' },
+      });
+
+      if (response.status !== 200) continue;
+
+      const first = response.data?.[0];
+      if (!first?.lat || !first?.lon) continue;
+
+      const latitude = Number.parseFloat(first.lat);
+      const longitude = Number.parseFloat(first.lon);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) continue;
+
+      return { latitude, longitude };
+    }
+
+    return null;
+
+  } catch (err) {
+    console.error('Error fetching coordinates:', err);
+    return null;
+  };
+}
+
+async function main() {
+  // STEP B: Process the rest of the RMR Cities via API
+  console.log('📡 Fetching coordinates for the rest of RMR. This will take about 5-10 minutes...');
+  for (const cityData of rmrCities) {
+    console.log(`\n🏙️ Processing City: ${cityData.city}`);
+
+    for (const neighborhood of cityData.neighborhoods) {
+      const coords = await getCoordinates(neighborhood, cityData.city);
+
+      if (coords) {
+        await prisma.neighborhood.upsert({
+          where: { name_city: { name: neighborhood, city: cityData.city } },
+          update: { latitude: coords.latitude, longitude: coords.longitude },
+          create: {
+            name: neighborhood,
+            city: cityData.city,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          },
+        });
+        console.log(`  ✅ Upserted: ${neighborhood} (${coords.latitude}, ${coords.longitude})`);
+      } else {
+        console.log(`  ⚠️ Coordinates not found for: ${neighborhood}`);
+      }
+
+      // CRITICAL: Wait 1.5 seconds before making the next API call to avoid getting IP banned
+      await sleep(1500);
+    }
+  }
+
+console.log('\n✨ Database successfully seeded with full RMR data!');
+};
+
+main()
+  .catch((err) => {
+    console.error('A fatal error occurred during seeding:', err);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
