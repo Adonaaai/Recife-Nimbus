@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model UserReport {
+  id Int @id @default(autoincrement())
+  title String
+  description String
+  contactNumber String?
+  neighborhood String
+  createdAt DateTime @default(now())
+
+  media Media[]
+}
+
+model Media {
+  id Int @id @default(autoincrement())
+  fileId String
+  fileType String
+  userReportId Int
+  userReport UserReport @relation(fields: [userReportId], references: [id])
+}
+
+model Neighborhood {
+  id int @id @default(autoincrement())
+  name String
+  city String
+  region String?
+  latitude Float
+  longitude Float
+  isActive Boolean @default(true)
+  rpa Int
+
+  alerts AlertLog[]
+
+  @@unique([name, city])
+}
+
+model AlertLog {
+  id Int @id @default(autoincrement())
+  neighborhoodId String
+  rainLevel Float?
+  tideLevel Float?
+  triggeredAt DateTime @default(now())
+  
+  neighborhood Neighborhood @relation(fields: [neighborhoodId], references: [id])
+}
