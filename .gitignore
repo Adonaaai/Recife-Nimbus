@@ -1,3 +1,71 @@
-node_modules
+# ==========================================
+# PRISMA GENERATED FILES & CLIENT
+# ==========================================
+# Ignore the generated Prisma client (required for v6.6.0+ ESM support)
+./src/generated/prisma
+./generated/prisma
+# Default node_modules location if not overridden
+node_modules/.prisma
 
-/generated/prisma
+# ==========================================
+# TYPESCRIPT BUILD ARTIFACTS
+# ==========================================
+# Ignore compiled JavaScript files and source maps
+dist/
+build/
+out/
+*.js
+*.map
+# Ignore declaration files if not needed in repo
+*.d.ts
+# Ignore TypeScript build artifacts in root
+tsconfig.tsbuildinfo
+
+# ==========================================
+# SENSITIVE DATA & CONFIG
+# ==========================================
+# Ignore environment files containing secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ==========================================
+# PACKAGE MANAGER & DEPENDENCIES
+# ==========================================
+# Ignore lock files if using a different manager or monorepo strategy
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lock
+# Ignore npm/yarn specific cache files
+.npm
+.yarn/cache
+.yarn/install-state.gz
+
+# ==========================================
+# IDE & EDITOR FILES
+# ==========================================
+# Ignore editor configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ==========================================
+# OS & SYSTEM FILES
+# ==========================================
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.bak
+
+# ==========================================
+# PRISMA MIGRATION SPECIFIC (Optional)
+# ==========================================
+# If you use the prismaSchemaFolder preview feature, ignore migrations if they are auto-generated
+# migrations/
+# Only keep if you manually manage migration files   
