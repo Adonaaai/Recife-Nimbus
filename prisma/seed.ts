@@ -246,6 +246,7 @@ async function getCoordinates(neighborhood: string, city: string) {
 
     for (const query of queries) {
       const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`;
+      
       const response = await axios.get(url, {
         headers: { 'User-Agent': 'RecifeNimbus/1.0' },
       });
