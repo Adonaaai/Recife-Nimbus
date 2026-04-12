@@ -15,9 +15,12 @@
     "@prisma/client": "^7.7.0",
     "axios": "^1.14.0",
     "dotenv": "^17.4.1",
+    "express": "^5.2.1",
     "node-cron": "^4.2.1",
     "node-telegram-bot-api": "^0.67.0",
-    "pg": "^8.20.0"
+    "pg": "^8.20.0",
+    "telegraf": "^4.16.3",
+    "telegraf-inline-menu": "^6.3.0"
   },
   "devDependencies": {
     "@types/node": "^25.5.2",

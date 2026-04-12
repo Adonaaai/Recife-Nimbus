@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
@@ -8,44 +8,65 @@ datasource db {
 }
 
 model UserReport {
-  id Int @id @default(autoincrement())
-  title String
-  description String
+  id            Int      @id @default(autoincrement())
+  title         String
+  description   String
   contactNumber String?
-  neighborhood String
-  createdAt DateTime @default(now())
+  neighborhood  String
+  createdAt     DateTime @default(now())
 
   media Media[]
 }
 
 model Media {
-  id Int @id @default(autoincrement())
-  fileId String
-  fileType String
+  id           Int    @id @default(autoincrement())
+  fileId       String
+  fileType     String
   userReportId Int
+  
   userReport UserReport @relation(fields: [userReportId], references: [id])
 }
 
+model Subscriber {
+  id         String   @id @default(uuid())
+  telegramId String   @unique
+  firstName  String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  neighborhoods Neighborhood[]
+}
+
 model Neighborhood {
-  id Int @id @default(autoincrement())
-  name String
-  city String
-  region String?
-  latitude Float
-  longitude Float
-  isActive Boolean @default(true)
+  id          Int      @id @default(autoincrement())
+  name        String
+  region      String?
+  latitude    Float
+  longitude   Float
+  isActive    Boolean  @default(true)
+  
+  cityId      Int
 
-  alerts AlertLog[]
+  city        City     @relation(fields: [cityId], references: [id])
+  alerts      AlertLog[]
+  subscribers Subscriber[]
+  
+  @@unique([name, cityId])
+}
 
-  @@unique([name, city])
+model City {
+  id            Int            @id @default(autoincrement())
+  name          String         @unique
+  
+  neighborhoods Neighborhood[] 
 }
 
 model AlertLog {
-  id Int @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   neighborhoodId Int
-  rainLevel Float?
-  tideLevel Float?
-  triggeredAt DateTime @default(now())
+  rainLevel      Float?
+  tideLevel      Float?
+  triggeredAt    DateTime @default(now())
   
   neighborhood Neighborhood @relation(fields: [neighborhoodId], references: [id])
 }
