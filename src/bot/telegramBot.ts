@@ -1,4 +1,5 @@
-import { Context, Markup } from 'telegraf'; // 👈 FIX: Added Context
+import 'dotenv/config';
+import { Context, Markup } from 'telegraf';
 import { MenuTemplate, MenuMiddleware, createBackMainMenuButtons } from 'telegraf-inline-menu';
 import { prisma } from '../lib/prisma.ts';
 import { bot } from '../lib/bot.ts';
@@ -10,14 +11,14 @@ export interface BotContext extends Context {
 bot.start(async (ctx) => {
     try {
         const telegramId = String(ctx.from?.id);
-        const firstName = ctx.from?.first_name || 'Cidadão'; // 👈 FIX: first_name
+        const firstName = ctx.from?.first_name || 'Cidadão'; 
 
         await prisma.subscriber.upsert({
             where: {telegramId: telegramId},
             update: {isActive: true},
             create: {
                 telegramId: telegramId,
-                firstName: firstName // 👈 FIX: Removed the extra semicolon here
+                firstName: firstName
             }
         });
 
