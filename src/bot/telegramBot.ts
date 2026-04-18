@@ -53,7 +53,7 @@ neighborhoodMenu.select('Neighborhood',
 
     {
         columns: 2, 
-        maxRows: 5,
+        maxRows: 50,
 
         isSet: async (ctx, key) => {
             const telegramId = String(ctx.from?.id);

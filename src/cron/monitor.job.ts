@@ -1,6 +1,6 @@
 import { tideZones } from '../config/tideZones.ts';
 import cron from 'node-cron';
-import { getUpcomingTides, getUpcomingRains } from '../controllers/monitorControllers.ts'
+import { getUpcomingTides, getUpcomingRains } from './controllers/monitorControllers.ts'
 
 export const monitorJob = async () => {
     console.log(`Recife-Nimbus Monitor initialized. Waiting for next interval...`);
