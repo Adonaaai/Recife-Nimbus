@@ -2,6 +2,7 @@ import express from 'express';
 import morgan from 'morgan'
 import cors from 'cors';
 import { errorHandler } from './middleware/errorHandler.ts';
+import reportRoutes from './routes/reportRoutes.ts'
 
 const app = express();
 
@@ -10,6 +11,7 @@ app.use(morgan('tiny'));
 app.use(express.json());
 
 // Routes:
+app.use('/api/reports/', reportRoutes);
 
 app.use(errorHandler);
 
