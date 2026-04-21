@@ -3,12 +3,32 @@ import { prisma } from '../../lib/prisma.ts';
 
 export const getReports = async (req: Request, res: Response, next: NextFunction) => {
     try {
+
+        // Pagination settings:
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
         // All active reports inside db.
         const reports = await prisma.userReport.findMany({
+            take: limit,
+            skip: skip,
             orderBy: { createdAt: 'desc'}
         });
 
-        res.status(200).json(reports);
+        // Pagination infos:
+        const totalReports = await prisma.userReport.count();
+        const totalPages = Math.ceil(totalReports / limit);
+
+        res.status(200).json({
+            data: reports,
+            meta: {
+                totalRecords: totalReports,
+                currentPage: page,
+                totalPages: totalPages,
+                limit: limit
+            } 
+        });
 
     } catch (err) {
         next(err);

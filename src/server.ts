@@ -2,7 +2,8 @@ import express from 'express';
 import morgan from 'morgan'
 import cors from 'cors';
 import { errorHandler } from './middleware/errorHandler.ts';
-import reportRoutes from './routes/reportRoutes.ts'
+import reportRoutes from './routes/reportRoutes.ts';
+import neighborhoodRoutes from './routes/neighborhoodRoutes.ts';
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(express.json());
 
 // Routes:
 app.use('/api/reports/', reportRoutes);
+app.use('/api/neighborhoods/', neighborhoodRoutes);
 
 app.use(errorHandler);
 

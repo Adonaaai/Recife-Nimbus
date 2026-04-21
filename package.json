@@ -22,7 +22,8 @@
     "node-telegram-bot-api": "^0.67.0",
     "pg": "^8.20.0",
     "telegraf": "^4.16.3",
-    "telegraf-inline-menu": "^6.3.0"
+    "telegraf-inline-menu": "^6.3.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.5.2",
