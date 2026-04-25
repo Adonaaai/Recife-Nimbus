@@ -1,10 +1,10 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql" // Change to "mysql" or "sqlite" if you aren't using Postgres
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
 }
 
 // =========================================
@@ -20,7 +20,7 @@ model City {
 
 model Zone {
   id               Int            @id @default(autoincrement())
-  name             String         // e.g., "Zona Sul", "Zona Norte"
+  name             String         @unique // e.g., "Zona Sul", "Zona Norte"
   
   // Center point for 3-Hour Forecasts (Open-Meteo)
   latitude         Float          
@@ -45,6 +45,7 @@ model Neighborhood {
   zone          Zone           @relation(fields: [zoneId], references: [id], onDelete: Cascade)
   
   users         User[]
+  @@unique([name, zoneId])
 }
 
 // ==========================================
@@ -58,8 +59,8 @@ model User {
   
   // The user subscribes to a specific neighborhood, but the bot 
   // calculates danger based on the Zone that neighborhood belongs to.
-  neighborhoodId Int
-  neighborhood   Neighborhood @relation(fields: [neighborhoodId], references: [id], onDelete: SetNull)
+  neighborhoodId Int?
+  neighborhood   Neighborhood? @relation(fields: [neighborhoodId], references: [id], onDelete: SetNull)
   
   createdAt      DateTime     @default(now())
 }

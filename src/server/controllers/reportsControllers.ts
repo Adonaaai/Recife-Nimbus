@@ -27,7 +27,7 @@ export const getReports = async (req: Request, res: Response, next: NextFunction
                 currentPage: page,
                 totalPages: totalPages,
                 limit: limit
-            } 
+            },
         });
 
     } catch (err) {
@@ -37,8 +37,15 @@ export const getReports = async (req: Request, res: Response, next: NextFunction
 
 export const createReport = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        // Get the files from the request (Multer puts them here)
+        const files = req.files as Express.Multer.File[];
 
         const { title, description, contactNumber, neighborhood } = req.body;
+
+        const mediaData = files ? files.map( file => ({
+            url: `/uploads/${file.filename}`,
+            fileType: file.mimetype
+        })) : [];
 
         // Creating a new report with all infos("req.body").
         const newReports = await prisma.userReport.create({
@@ -46,8 +53,15 @@ export const createReport = async (req: Request, res: Response, next: NextFuncti
                 title,
                 description,
                 contactNumber,
-                neighborhood
-            }
+                neighborhood,
+                media: {
+                    create: mediaData
+                },
+            },
+
+            include: {
+                media: true
+            },
         });
         
         res.status(201).json(newReports);
@@ -71,7 +85,7 @@ export const updateReport = async (req: Request, res: Response, next: NextFuncti
                 description,
                 contactNumber,
                 neighborhood
-            }
+            },
         });
         
         res.status(200).json(report);
