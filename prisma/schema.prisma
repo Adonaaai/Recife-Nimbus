@@ -76,6 +76,7 @@ model AlertLog {
   // The Triple-Threat Data at the exact moment of the alert
   rainLevel     Float?   // Real-time from APAC (or forecast amount)
   tideLevel     Float?   // From Tide API/PDF
+  forecastRainMm Float?  // Predicted rain (Open-Meteo) at alert time
   riverLevel    String?  // APAC River Status (e.g., "Normal", "Alerta", "Inundação")
   
   // Metadata about the alert

@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.7.0",
-    "@prisma/client": "^7.7.0",
+    "@prisma/client": "^7.8.0",
     "axios": "^1.14.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.1",
@@ -32,7 +32,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/node-telegram-bot-api": "^0.64.14",
     "@types/pg": "^8.20.0",
-    "prisma": "^7.7.0",
+    "prisma": "^7.8.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"

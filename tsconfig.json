@@ -4,6 +4,7 @@
     "moduleResolution": "bundler",
     "target": "ES2023",
     "strict": true,
+    "resolveJsonModule": true,
     "esModuleInterop": true,
     "ignoreDeprecations": "6.0"
   }
