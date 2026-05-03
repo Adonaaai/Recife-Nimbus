@@ -39,7 +39,7 @@ export const getCurrentTideHeight = (): number => {
             const ratio = (nowMs - before.dateTimeMs) / (after.dateTimeMs - before.dateTimeMs);
             const tideHeight = before.height + ratio * (after.height - before.height);
 
-            // Drop some decimals. Example: 1.35356 = 1.35
+            // Drop some decimals. Example: 1.35356 -> 1.35
             return Math.round(tideHeight * 100) / 100;
         };
     };

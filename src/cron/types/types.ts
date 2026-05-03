@@ -3,6 +3,7 @@ export const T = {
     // Rains millimetres.
     RAIN_RED_MM: 30,
     RAIN_YELLOW_MM: 15,
+    FORECAST_MM: 10,
 
     // Tides metres.
     TIDE_HIGH_M: 2.0,
@@ -11,6 +12,9 @@ export const T = {
     // Compound rain and tide.
     COMPOUND_RAIN_MM: 15,
     COMPOUND_TIDE_M: 2.0,
+
+    // forecast compound rain
+    FORECAST_COMPOUND_RAIN_MM: 2,
 
     // Cooldowns for no spamming.
     COOLDOWN_RED_MIN: 60,
@@ -29,10 +33,10 @@ export interface RainSensor {
     hora_1: number,
 
      // The river basin this sensor belongs to, e.g. "Capibaribe", "GL2"
-    bacia: String,
+    bacia: string,
 
     // City name, e.g. "Recife", "Jaboatão dos Guararapes"
-    municipio: String
+    municipio: string
   }
 };
 
@@ -55,8 +59,17 @@ export type Severity = 'NONE' | 'YELLOW' | 'RED';
 export interface ZoneRisk {
   severity: Severity;
   maxRainMm: number;
-  riverSituacao: String | null; // null if doesn't exist river in this zone.
+  riverSituacao: string | null; // null if doesn't exist river in this zone.
+  riverTendencia: stromg | null
   tideHeight: number;
   forecastMm: number;
+  forecastTide: number; // 3 next hours Tide height
   reasons: string[]; // Example: ["Chuva intensa: 35mm/h", "Maré alta: 2.3m"]
+};
+
+// typed dictionary
+export const TREND_LABEL: Record<string, string> = {
+  'S': '↑ subindo',
+  'M': '→ estável',
+  'D': '↓ descendo',
 };

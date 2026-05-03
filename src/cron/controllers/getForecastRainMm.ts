@@ -2,7 +2,12 @@ import axios from 'axios';
 
 export const getForecastRainMm = async(lat: number, lon: number): Promise<number> => {
     try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}longitude=${lon}hourly=precipitation&timezone=America%2FSao_Paulo`;
+        const url =
+            `https://api.open-meteo.com/v1/forecast` +
+            `?latitude=${lat}&longitude=${lon}` +  // ← & here
+            `&hourly=precipitation` +              // ← & here
+            `&timezone=America%2FSao_Paulo`;
+            
         const res = await axios.get(url, {timeout: 8000});
         
         // times[i] matches with rain[i]
@@ -16,7 +21,7 @@ export const getForecastRainMm = async(lat: number, lon: number): Promise<number
         let count = 0;
 
         for (let i = 0; i < times.length && count < 3; i++) {
-            const timeMs = new Date(times[i]).getTime();
+            const timeMs = new Date(times[i] + '-03:00').getTime();
             if (timeMs >= nowMs) {
                 // This time is in the future - add the rain to the total.
                 total += rain[i];
@@ -29,6 +34,6 @@ export const getForecastRainMm = async(lat: number, lon: number): Promise<number
 
     } catch (err) {
         console.error(`[Rain] Error getting forecast rain mm: ${err}`);
-        return -1;
+        return 0;
     };
 };
