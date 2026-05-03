@@ -1,12 +1,19 @@
 import { ZoneRisk, Severity, T, TREND_LABEL } from "../types/types.ts";
 
-//    calculateRisk(35, 'Normal',     1.5, 5,    1.8) → RED    (Heavy rain)
-//    calculateRisk(0,  'Normal',     1.0, 0,    1.0) → NONE   (Everything ok)
-//    calculateRisk(16, 'Normal',     2.2, 0,    1.5) → RED    (Current rain + high tide)
-//    calculateRisk(5,  'Normal',     1.0, 16,   2.2) → RED    (chuva prevista + maré prevista)
-//    calculateRisk(0,  'Normal',     1.0, 12,   1.0) → YELLOW (previsão de chuva)
-//    calculateRisk(0,  'Normal',     1.0, 5,    2.6) → YELLOW (maré extrema prevista)
-//    calculateRisk(0,  'Pré-alerta', 1.0, 0,    1.0) → YELLOW (rio em observação)
+// === calculateRisk return examples ===========================================================================================
+
+//                 maxRainMm  riverSituacao  riverTendencia  tideHeight  forecastMm  forecastTide
+//    calculateRisk(35,       'Normal',      null,           1.5,        5,          1.8) → RED    (chuva intensa)
+//    calculateRisk(0,        'Normal',      null,           1.0,        0,          1.0) → NONE   (tudo normal)
+//    calculateRisk(16,       'Normal',      null,           2.2,        0,          1.5) → RED    (composto atual)
+//    calculateRisk(5,        'Normal',      null,           1.0,        16,         2.2) → RED    (composto previsto)
+//    calculateRisk(0,        'Normal',      null,           1.0,        12,         1.0) → YELLOW (previsão de chuva)
+//    calculateRisk(0,        'Normal',      null,           1.0,        5,          2.6) → YELLOW (maré extrema prevista)
+//    calculateRisk(0,        'Pré-alerta',  'S',            1.0,        0,          1.0) → YELLOW (rio em observação ↑ subindo)
+//    calculateRisk(0,        'Alerta',      'D',            1.0,        0,          1.0) → RED    (rio em alerta ↓ descendo)
+
+// =============================================================================================================================
+
 export const calculateRisk = (
     maxRainMm: number,
     riverSituacao: String | null,
@@ -123,4 +130,3 @@ export const calculateRisk = (
         reasons: []
     }
 };
-
