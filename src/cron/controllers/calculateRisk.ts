@@ -1,0 +1,126 @@
+import { ZoneRisk, Severity, T, TREND_LABEL } from "../types/types.ts";
+
+//    calculateRisk(35, 'Normal',     1.5, 5,    1.8) → RED    (Heavy rain)
+//    calculateRisk(0,  'Normal',     1.0, 0,    1.0) → NONE   (Everything ok)
+//    calculateRisk(16, 'Normal',     2.2, 0,    1.5) → RED    (Current rain + high tide)
+//    calculateRisk(5,  'Normal',     1.0, 16,   2.2) → RED    (chuva prevista + maré prevista)
+//    calculateRisk(0,  'Normal',     1.0, 12,   1.0) → YELLOW (previsão de chuva)
+//    calculateRisk(0,  'Normal',     1.0, 5,    2.6) → YELLOW (maré extrema prevista)
+//    calculateRisk(0,  'Pré-alerta', 1.0, 0,    1.0) → YELLOW (rio em observação)
+export const calculateRisk = (
+    maxRainMm: number,
+    riverSituacao: String | null,
+    riverTendencia: string | null,
+    tideHeight: number,
+    forecastMm: number,
+    forecastTide: number,
+): ZoneRisk => {
+
+    const reasons: string[] = [];
+
+    const trendLabel = TREND_LABEL[riverTendencia ?? ''] ?? '';
+
+    // ==== Red conditions: =====================================================
+    const rainAlerted = maxRainMm >= T.RAIN_RED_MM;
+    
+    // APAC rivers alerted
+    const riverAlerted =
+        riverSituacao === 'Alerta' ||
+        riverSituacao === 'Inundação';
+
+    const tideAlerted = tideHeight >= T.TIDE_EXTREME_M;
+
+    // Thriggered if we already have high rains and tides.
+    const currentCompoundAlerted = 
+        maxRainMm >= T.COMPOUND_RAIN_MM &&
+        tideHeight >= T.COMPOUND_TIDE_M;
+    
+    // Thriggered only when we foresee high rains and tides in next 3 hours.
+    const forecastCompoundAlerted =
+        forecastMm >= T.FORECAST_COMPOUND_RAIN_MM &&
+        forecastTide >= T.FORECAST_COMPOUND_TIDE_M;
+    // ========================================================================
+
+    if (rainAlerted) reasons.push(`Chuva intensa: ${maxRainMm}mm/h`);
+
+    if (riverAlerted) {
+        // Using .trim() to drop final spaces if trendLabel === "".
+        reasons.push(`Rio em ${riverSituacao} ${trendLabel}`.trim());
+    };
+
+    if (tideAlerted) reasons.push(`Maré Extrema: ${tideHeight}m`);
+    if (currentCompoundAlerted) reasons.push(`Risco de Alagamentos: ${maxRainMm}mm/h e maré ${tideHeight}m`);
+    if (forecastCompoundAlerted) reasons.push(`Risco de Alagamentos ${forecastMm}mm/h e maré ${forecastTide}m  Previstos para as proximas 3 horas`);
+
+    // Checking if any of the conditions is thriggered.
+    if (rainAlerted || riverAlerted || tideAlerted || currentCompoundAlerted || forecastCompoundAlerted) {
+        return {
+            severity: 'RED',
+            maxRainMm,
+            riverSituacao,
+            riverTendencia,
+            tideHeight,
+            forecastMm,
+            forecastTide,
+            reasons,
+        };
+    };
+
+    // ==== Yellow conditions: =====================================================
+    const modRain = 
+        maxRainMm >= T.RAIN_YELLOW_MM;
+  
+    // River is being watched — not dangerous yet but heading there.
+    const riverYellow =
+        riverSituacao === 'Pré-alerta';
+
+    const highForecast =
+        forecastMm >= T.FORECAST_MM;
+  
+    // ≥2.0m — drainage weakening, adds context to the other triggers.
+    const highTide = 
+        tideHeight >= T.TIDE_HIGH_M;
+
+    // Extreme Tide in next 3 hours.
+    const extremeForecastTide = 
+        forecastTide >= T.TIDE_EXTREME_M; 
+
+    // ========================================================================
+
+    if (modRain) reasons.push(`Chuva moderada: ${maxRainMm}mm/h`);
+
+    if (riverYellow) {
+        // Using .trim() to drop final spaces if trendLabel === "".
+        reasons.push(`Rio em Pré-alerta ${trendLabel}`.trim());
+    };
+
+    if (highForecast) reasons.push(`Previsão: ${forecastMm}mm nas próximas 3h`);
+    if (highTide)     reasons.push(`Maré alta: ${tideHeight}m`);
+    if (extremeForecastTide) reasons.push(`Maré Extrema nas proximas 3 horas: ${forecastTide}m`);
+
+    if (modRain || riverYellow || highForecast || extremeForecastTide) {
+        return {
+            severity: 'YELLOW',
+            maxRainMm,
+            riverSituacao,
+            riverTendencia,
+            tideHeight,
+            forecastMm,
+            forecastTide,
+            reasons
+        }
+    };
+
+    // If anything is thriggered we return the data back with severity "NONE".
+    return {
+        severity: 'NONE',
+        maxRainMm,
+        riverSituacao,
+        riverTendencia,
+        tideHeight,
+        forecastMm,
+        forecastTide,
+        reasons: []
+    }
+};
+
