@@ -16,7 +16,7 @@ import { ZoneRisk, Severity, T, TREND_LABEL } from "../types/types.ts";
 
 export const calculateRisk = (
     maxRainMm: number,
-    riverSituacao: String | null,
+    riverSituacao: string | null,
     riverTendencia: string | null,
     tideHeight: number,
     forecastMm: number,

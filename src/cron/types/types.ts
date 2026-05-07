@@ -73,3 +73,5 @@ export const TREND_LABEL: Record<string, string> = {
   'M': '→ estável',
   'D': '↓ descendo',
 };
+
+export const SEVERITY_ORDER = ['Normal', 'Pré-alerta', 'Alerta', 'Inundação'];
