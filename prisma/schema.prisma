@@ -61,7 +61,8 @@ model User {
   // calculates danger based on the Zone that neighborhood belongs to.
   neighborhoodId Int?
   neighborhood   Neighborhood? @relation(fields: [neighborhoodId], references: [id], onDelete: SetNull)
-  
+  isActive       Boolean @default(true)
+
   createdAt      DateTime     @default(now())
 }
 
@@ -74,10 +75,12 @@ model AlertLog {
   zoneId        Int      
   
   // The Triple-Threat Data at the exact moment of the alert
-  rainLevel     Float?   // Real-time from APAC (or forecast amount)
-  tideLevel     Float?   // From Tide API/PDF
+  rainLevel      Float?   // Real-time from APAC (or forecast amount)
+  tideLevel      Float?   // From Tide API/PDF
+  forecastTide   Float?
   forecastRainMm Float?  // Predicted rain (Open-Meteo) at alert time
-  riverLevel    String?  // APAC River Status (e.g., "Normal", "Alerta", "Inundação")
+  riverLevel     String?  // APAC River Status (e.g., "Normal", "Alerta", "Inundação")
+  riverTendencia String? // "S" | "M" | "D"
   
   // Metadata about the alert
   severity      String   // e.g., "YELLOW" (Predictive), "RED" (Real-Time Critical)

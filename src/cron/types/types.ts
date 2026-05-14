@@ -60,7 +60,7 @@ export interface ZoneRisk {
   severity: Severity;
   maxRainMm: number;
   riverSituacao: string | null; // null if doesn't exist river in this zone.
-  riverTendencia: stromg | null
+  riverTendencia: string | null
   tideHeight: number;
   forecastMm: number;
   forecastTide: number; // 3 next hours Tide height
@@ -74,4 +74,9 @@ export const TREND_LABEL: Record<string, string> = {
   'D': '↓ descendo',
 };
 
-export const SEVERITY_ORDER = ['Normal', 'Pré-alerta', 'Alerta', 'Inundação'];
+export const SEVERITY_ORDER = {
+  "Normal": 0,
+  "Pré-alerta": 1,
+  'Alerta':     2,
+  "Inundação": 3
+};
