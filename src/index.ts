@@ -1,8 +1,5 @@
 import 'dotenv/config';
 import { startTelegramBot } from './bot/telegramBot.ts';
-import app from './server.ts';
-
-const port = parseInt(process.env.PORT || '3000');
 
 async function main() {
     try {

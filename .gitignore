@@ -45,6 +45,7 @@ bun.lock
 .npm
 .yarn/cache
 .yarn/install-state.gz
+AGENTS.md
 
 # ==========================================
 # IDE & EDITOR FILES
@@ -69,5 +70,5 @@ Thumbs.db
 # PRISMA MIGRATION SPECIFIC (Optional)
 # ==========================================
 # If you use the prismaSchemaFolder preview feature, ignore migrations if they are auto-generated
-# migrations/
+migrations/
 # Only keep if you manually manage migration files   
