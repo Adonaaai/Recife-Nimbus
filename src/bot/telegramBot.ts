@@ -1,20 +1,24 @@
 import 'dotenv/config';
 import { Context } from 'telegraf';
 import { MenuTemplate, MenuMiddleware, createBackMainMenuButtons } from 'telegraf-inline-menu';
-import { prisma } from '../lib/prisma'; // Certifique-core que o caminho está correto
+import { prisma } from '../lib/prisma';
 import { bot } from '../lib/bot';
 
 export interface BotContext extends Context {
     match?: RegExpExecArray | undefined;
 }
 
-// --- 1. COMANDO START ---
+type NeighborhoodChoice = { id: number; name: string };
+type ZoneChoice = { id: number; name: string };
+type CityChoice = { id: number; name: string };
+
+// --- 1. START COMMAND ---
 bot.start(async (ctx) => {
     try {
         const chatId = String(ctx.from?.id);
         const name = ctx.from?.first_name || 'Cidadão';
 
-        // Atualizado: Subscriber -> User | telegramId -> telegramChatId
+        // Updated: Subscriber -> User | telegramId -> telegramChatId
         await prisma.user.upsert({
             where: { telegramChatId: chatId },
             update: { name: name },
@@ -27,11 +31,11 @@ bot.start(async (ctx) => {
         await ctx.reply(`Olá, ${name}! 🌊\n\nBem-vindo ao Recife-Nimbus. Eu vou te avisar em tempo real se houver risco de alagamento no seu bairro.\n\nUse /configurar para escolher sua localização.`);
 
     } catch (err) {
-        console.error("Erro no bot.start:", err);
+        console.error("Error in bot.start:", err);
     }
 });
 
-// --- 2. MENU DE BAIRROS (Terceiro Nível) ---
+// --- 2. NEIGHBORHOOD MENU (Third Level) ---
 const neighborhoodMenu = new MenuTemplate<BotContext>(async (ctx) => {
     const zoneId = parseInt(ctx.match![1]);
     const zone = await prisma.zone.findUnique({ where: { id: zoneId } });
@@ -47,12 +51,12 @@ neighborhoodMenu.select('n',
         });
 
         const choices: Record<string, string> = {};
-        neighborhoods.forEach(n => choices[n.id.toString()] = n.name);
+        neighborhoods.forEach((n: NeighborhoodChoice) => choices[n.id.toString()] = n.name);
         return choices;
     },
     {
         columns: 2,
-        // No novo schema, o usuário tem apenas 1 bairro (radio button)
+        // In the new schema, the user has only 1 neighborhood (radio button)
         isSet: async (ctx, key) => {
             const chatId = String(ctx.from?.id);
             const user = await prisma.user.findUnique({
@@ -77,7 +81,7 @@ neighborhoodMenu.select('n',
             } else {
                 await prisma.user.update({
                     where: { telegramChatId: chatId },
-                    data: { neighborhoodId: null } // Remove o vínculo no banco
+                    data: { neighborhoodId: null } // Removes the link from the database
                 });
                 
                 await ctx.answerCbQuery(`❌ Monitoramento desativado`);
@@ -90,7 +94,7 @@ neighborhoodMenu.select('n',
 
 neighborhoodMenu.manualRow(createBackMainMenuButtons('⬅️ Voltar para Regiões', ''));
 
-// --- 3. MENU DE ZONAS (Segundo Nível) ---
+// --- 3. ZONE MENU (Second Level) ---
 const zoneMenu = new MenuTemplate<BotContext>(async (ctx) => {
     const cityId = parseInt(ctx.match![1]);
     const city = await prisma.city.findUnique({ where: { id: cityId } });
@@ -106,8 +110,8 @@ zoneMenu.chooseIntoSubmenu('z',
         });
 
         const choices: Record<string, string> = {};
-        zones.forEach(z => {
-            // Limpa o nome "Recife - Norte (RPA 2)" para mostrar apenas "Norte (RPA 2)"
+        zones.forEach((z: ZoneChoice) => {
+            // Strips the name "Recife - Norte (RPA 2)" to display only "Norte (RPA 2)"
             choices[z.id.toString()] = z.name.split(' - ')[1] || z.name;
         });
         return choices;
@@ -118,27 +122,27 @@ zoneMenu.chooseIntoSubmenu('z',
 
 zoneMenu.manualRow(createBackMainMenuButtons('⬅️ Voltar para Cidades', ''));
 
-// --- 4. MENU PRINCIPAL: CIDADES (Primeiro Nível) ---
+// --- 4. MAIN MENU: CITIES (First Level) ---
 const cityMenu = new MenuTemplate<BotContext>('🌍 Configuração de Alertas\nSelecione a sua cidade:');
 
 cityMenu.chooseIntoSubmenu('c',
     async () => {
         const cities = await prisma.city.findMany({ orderBy: { name: 'asc' } });
         const choices: Record<string, string> = {};
-        cities.forEach(c => choices[c.id.toString()] = `📍 ${c.name}`);
+        cities.forEach((c: CityChoice) => choices[c.id.toString()] = `📍 ${c.name}`);
         return choices;
     }, 
     zoneMenu, 
     { columns: 1 }
 );
 
-// --- 5. MIDDLEWARE E INICIALIZAÇÃO ---
+// --- 5. MIDDLEWARE AND INITIALIZATION ---
 const menuMiddleware = new MenuMiddleware<BotContext>('/', cityMenu);
 bot.use(menuMiddleware.middleware());
 
-// Atalhos de comandos
+// Command shortcuts
 bot.command('configurar', (ctx) => menuMiddleware.replyToContext(ctx));
-bot.command('CadastrarBairro', (ctx) => menuMiddleware.replyToContext(ctx)); // Mantendo compatibilidade com seu código anterior
+bot.command('CadastrarBairro', (ctx) => menuMiddleware.replyToContext(ctx)); // Keeping backwards compatibility with previous code
 
 export const startTelegramBot = () => {
     bot.launch();
