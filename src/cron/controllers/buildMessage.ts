@@ -1,4 +1,4 @@
-import { Severity } from './types/types.ts';
+import { Severity } from '../types/types.ts';
 
 export const buildMessage = (zoneName: string, severity: Severity, reasons: string[]): string => {
  

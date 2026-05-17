@@ -45,7 +45,7 @@ export const calculateRisk = (
     // Thriggered only when we foresee high rains and tides in next 3 hours.
     const forecastCompoundAlerted =
         forecastMm >= T.FORECAST_COMPOUND_RAIN_MM &&
-        forecastTide >= T.FORECAST_COMPOUND_TIDE_M;
+        forecastTide >= T.COMPOUND_TIDE_M;
     // ========================================================================
 
     if (rainAlerted) reasons.push(`Chuva intensa: ${maxRainMm}mm/h`);
