@@ -37,14 +37,14 @@ bot.start(async (ctx) => {
 
 // --- 2. NEIGHBORHOOD MENU (Third Level) ---
 const neighborhoodMenu = new MenuTemplate<BotContext>(async (ctx) => {
-    const zoneId = parseInt(ctx.match![1]);
+    const zoneId = parseInt(ctx.match![2]);
     const zone = await prisma.zone.findUnique({ where: { id: zoneId } });
     return `📍 Bairros em ${zone?.name}:\nEscolha onde você deseja monitorar:`;
 });
 
 neighborhoodMenu.select('n', 
     async (ctx) => {
-        const zoneId = parseInt(ctx.match![1]);
+        const zoneId = parseInt(ctx.match![2]);
         const neighborhoods = await prisma.neighborhood.findMany({
             where: { zoneId: zoneId },
             orderBy: { name: 'asc' }
