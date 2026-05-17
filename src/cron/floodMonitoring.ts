@@ -4,7 +4,7 @@ import { getForecastTideHeight } from './controllers/getForecastTideHeight.ts';
 import { getCurrentTideHeight } from './controllers/getCurrentTideHeight.ts';
 import { calculateRisk } from './controllers/calculateRisk.ts';
 import { getForecastRainMm } from './controllers/getForecastRainMm.ts';
-import { bot } from '../bot/telegramBot.ts';
+import { bot } from '../lib/bot.ts';
 import { prisma } from '../lib/prisma.ts';
 import { buildMessage } from './controllers/buildMessage';
 import cron from 'node-cron';
@@ -87,7 +87,7 @@ export const monitorJob = async () => {
                 const zoneRainSensor: RainSensor[] = rainSensors.filter((sensor) => {
     
                     // looping rainSensorNames array
-                    const nameMatch = zone.rainSensorNames.some((dbName) => {
+                    const nameMatch = zone.rainSensorNames.some((dbName: string) => {
                         
                         const isOnline = sensor.attributes.hora_1 >= 0; // -1 = offline
     
@@ -110,7 +110,7 @@ export const monitorJob = async () => {
                 const zoneRiverSensors: RiverSensor[] = riverSensors.filter((sensor) => {
     
                     // looping riverBasins array
-                    const nameMatch = zone.riverBasins.some((dbName) => {
+                    const nameMatch = zone.riverBasins.some((dbName: string) => {
     
                         // Checking if the DB name(ex: "riverSensors": "Capibaribe") 
                         // match the API name     (ex: "namebasin": "Capibaribe").
@@ -138,8 +138,8 @@ export const monitorJob = async () => {
                 // with the most critical situacao (status) via reduce.
                 const worstRiverStation = zoneRiverSensors.length > 0
                     ? zoneRiverSensors.reduce((worst, sensor) => {
-                        const currentScore = SEVERITY_ORDER[sensor.attributes.situacao] ?? 0;
-                        const worstScore   = SEVERITY_ORDER[worst.attributes.situacao]  ?? 0;
+                        const currentScore = SEVERITY_ORDER[sensor.attributes.situacao as keyof typeof SEVERITY_ORDER] ?? 0;
+                        const worstScore   = SEVERITY_ORDER[worst.attributes.situacao as keyof typeof SEVERITY_ORDER]  ?? 0;
                         return currentScore > worstScore ? sensor : worst;
                     })
                     : null;
@@ -206,7 +206,11 @@ export const monitorJob = async () => {
 
                     } catch(err) {
                         // Per-user catch: one blocked/inactive account never stops the broadcast.
-                        console.error(`[Telegram] Failed → ${chatId}: ${err.message}`);
+                        if (err instanceof Error) {
+                            console.error(`[Telegram] Failed → ${chatId}: ${err.message}`);
+                        } else {
+                            console.error(`[Telegram] Failed → ${chatId}:`, err);
+                        }
                     };
                 };
                 
