@@ -4,8 +4,10 @@
     "moduleResolution": "bundler",
     "target": "ES2023",
     "strict": true,
+    "skipLibCheck": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "ignoreDeprecations": "6.0"
+    "ignoreDeprecations": "6.0",
+    "allowImportingTsExtensions": true
   }
 }
