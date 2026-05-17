@@ -128,25 +128,6 @@ City
 
 ---
 
-## 🤖 Community Bot Commands
-
-### User Commands
-| Command | Usage | Purpose |
-|---------|-------|---------|
-| `/start` | `/start` | Register user, choose neighborhood |
-| `/status` | `/status Boa Viagem` | Get current conditions for neighborhood |
-| `/report` | `/report Capibaribe overflowing at bridge!` | Submit crowdsourced flood report |
-| `/subscribe` | `/subscribe` | Choose neighborhood for alerts |
-
-### Admin Commands (Telegram ADMIN_ID only)
-| Command | Purpose |
-|---------|---------|
-| `/broadcasts` | View alert history |
-| `/users` | List active subscribed users |
-| `/health` | System health check |
-
----
-
 ## 🔧 Architecture Details
 
 ### Cron Job (`src/cron/floodMonitoring.ts`)
