@@ -28,12 +28,6 @@ Recife and its surrounding cities in the RMR (Jaboatão dos Guararapes, Camaragi
   - 🔴 **RED** (Real-Time Critical): Real-time APAC data confirms flooding conditions now
 * **Message Templates:** Location-aware alerts include neighborhood name, rain forecast (mm), tide height (m), and river status.
 
-### 📱 The Community Bot (Telegram)
-* **User Subscriptions:** Residents subscribe to specific neighborhoods within zones.
-* `/status [neighborhood]` - Instantly fetches current rain prediction and tide level.
-* `/report [description]` - Crowdsourced flood reports (e.g., *"Av. Caxangá is impassable - 1.5m water"*), saved to database and forwarded to alert channel with 🚨 emoji.
-* **Personal Notifications:** Subscribed users receive direct messages for alerts in their neighborhood.
-
 ### 🌍 Multi-City RMR Support
 The system supports all cities in the Recife Metropolitan Region:
 - Recife (central monitoring hub)
@@ -131,25 +125,6 @@ City
 
 ⚠️ RISCO CRÍTICO - Evite áreas baixas!
 ```
-
----
-
-## 🤖 Community Bot Commands
-
-### User Commands
-| Command | Usage | Purpose |
-|---------|-------|---------|
-| `/start` | `/start` | Register user, choose neighborhood |
-| `/status` | `/status Boa Viagem` | Get current conditions for neighborhood |
-| `/report` | `/report Capibaribe overflowing at bridge!` | Submit crowdsourced flood report |
-| `/subscribe` | `/subscribe` | Choose neighborhood for alerts |
-
-### Admin Commands (Telegram ADMIN_ID only)
-| Command | Purpose |
-|---------|---------|
-| `/broadcasts` | View alert history |
-| `/users` | List active subscribed users |
-| `/health` | System health check |
 
 ---
 
