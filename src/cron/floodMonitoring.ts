@@ -218,7 +218,8 @@ export const monitorJob = async () => {
                         console.log(
                             `[Zone] ${zone.name} → ` +
                             `Rain: ${maxRainMm}mm | River: ${riverSituacao ?? "N/A"} | ` +
-                            `Tide: ${currentTideHeight}m | Forecast: ${forecastMm}mm`,
+                            `Tide: ${currentTideHeight}m | Forecast: ${forecastMm}mm`, +
+                            ` | Forecast Tide: ${forecastTideHeight}m`
                         );
 
                         // == RISK CALCULATOR ========================================
