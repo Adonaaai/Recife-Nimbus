@@ -16,11 +16,30 @@ model City {
   name          String         @unique // e.g., "Recife", "Jaboatão dos Guararapes"
   
   zones         Zone[]
+  channelAlerts CityAlertLog[]  // ← ADD THIS
 }
+
+model CityAlertLog {
+  id              Int      @id @default(autoincrement())
+  cityId          Int
+  
+  // Which zones alerted in this city (JSON or list)
+  alertedZones    String   // e.g., "North Zone, Center Zone" or JSON
+  hasRedAlert     Boolean  // TRUE if at least one zone had RED
+  
+  // Consolidated data
+  severity        String   // "RED" or "YELLOW"
+  messageSent     String   // Full text sent to channel
+  triggeredAt     DateTime @default(now())
+  
+  city            City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+}
+
 
 model Zone {
   id               Int            @id @default(autoincrement())
   name             String         @unique // e.g., "Zona Sul", "Zona Norte"
+  isCoastal        Boolean        @default(false) // True if the zone has a coastline (for tide data)
   
   // Center point for 3-Hour Forecasts (Open-Meteo)
   latitude         Float          
