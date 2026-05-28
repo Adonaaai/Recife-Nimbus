@@ -7,6 +7,7 @@ import { getForecastRainMm } from "./controllers/getForecastRainMm.ts";
 import { bot } from "../lib/bot.ts";
 import { prisma } from "../lib/prisma.ts";
 import { buildMessage, buildCityChannelMessage } from "./controllers/buildMessage";
+import { env } from "../config/env.ts";
 import cron from "node-cron";
 import axios from "axios";
 
@@ -338,7 +339,7 @@ export const monitorJob = async () => {
                         continue;
                     };
 
-                    const channelId: number = Number(process.env.TELEGRAM_ALERT_CHANNEL_ID);
+                    const channelId: number = env.getTelegramChannelId();
                     const channelMessage = buildCityChannelMessage(city.name, zoneSummaries);
 
                     try {

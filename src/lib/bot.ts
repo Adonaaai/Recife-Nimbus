@@ -1,11 +1,8 @@
 import { Telegraf } from 'telegraf';
 import 'dotenv/config';
+import { env } from '../config/env.ts';
 
-const token = process.env.TELEGRAM_API_TOKEN;
-
-if (!token) {
-    throw new Error('Token does not exist. ');
-};
+const token = env.getTelegramToken();
 
 const bot = new Telegraf(token);
 
