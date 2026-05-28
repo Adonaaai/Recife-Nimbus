@@ -74,7 +74,7 @@ export const monitorJob = async () => {
     cron.schedule("*/1 * * * *",
         async () => {
             console.log(
-                `\n[${new Date().toISOString()}] Running flood check...`,
+                `\n[SYSTEM] ${new Date().toLocaleString()} - Starting flood monitoring cycle...`,
             );
 
             try {
@@ -89,7 +89,7 @@ export const monitorJob = async () => {
                 const riverSensors: RiverSensor[] = riverRes.data.features ?? [];
 
                 console.log(
-                    `[APAC] ${rainSensors.length} rain sensors | ${riverSensors.length} river stations`,
+                    `[APAC] Loaded ${rainSensors.length} rain sensors and ${riverSensors.length} river stations`,
                 );
 
                 // == Tide levels — read synchronously from disk (no await needed) ===
@@ -232,7 +232,7 @@ export const monitorJob = async () => {
                         );
 
                         if (risk.severity === "NONE") {
-                            console.log(`${zone.name} All clear here!`);
+                            console.log(`[ZONE] ${zone.name} - ✓ No risk detected`);
                             continue;
                         }
 
@@ -243,7 +243,7 @@ export const monitorJob = async () => {
                         );
                         if (supressed) {
                             console.log(
-                                `[Zone] ${zone.name} → ⏸ Suppressed (cooldown)`,
+                                `[ZONE] ${zone.name} - ⏸ Suppressed by cooldown policy`,
                             );
                             continue;
                         }
@@ -287,11 +287,11 @@ export const monitorJob = async () => {
                                 // Per-user catch: one blocked/inactive account never stops the broadcast.
                                 if (err instanceof Error) {
                                     console.error(
-                                        `[Telegram] Failed → ${chatId}: ${err.message}`,
+                                        `[TELEGRAM] Error sending to user ${chatId}: ${err.message}`,
                                     );
                                 } else {
                                     console.error(
-                                        `[Telegram] Failed → ${chatId}:`,
+                                        `[TELEGRAM] Error sending to user ${chatId}:`,
                                         err,
                                     );
                                 }
@@ -314,7 +314,7 @@ export const monitorJob = async () => {
                         });
 
                         console.log(
-                            `[Zone] ${zone.name} → 🚨 ${risk.severity} sent to ${sent} user(s) | log #${alertLog.id}`,
+                            `[ZONE] ${zone.name} - 🚨 Alert [${risk.severity}] broadcasted to ${sent} user(s) | log #${alertLog.id}`,
                         );
 
                     }; // end for zone
@@ -322,7 +322,7 @@ export const monitorJob = async () => {
 
                     if (supressed) {
                         console.log(
-                            `[City] ${city.name} → ⏸ Suppressed (cooldown)`,
+                            `[CITY] ${city.name} - ⏸ Channel alert suppressed by cooldown policy`,
                         );
                         continue;
                     };
@@ -332,7 +332,7 @@ export const monitorJob = async () => {
                     // If this condition is false, it means we going to send a general alert for the channel.
                     if (redZones.length === 0 || supressed) {
                         console.log(
-                            `[City] ${city.name} → Clear for channel alert (no RED zones or cooldown).`,
+                            `[CITY] ${city.name} - No channel alert needed (no RED zones detected)`,
                         );
                         continue;
                     };
@@ -346,7 +346,7 @@ export const monitorJob = async () => {
                         })
 
                     } catch (err) {
-                        console.error(`[Telegram Channel] Failed → ${channelId}:`, err);
+                        console.error(`[TELEGRAM] Failed to send city alert to channel ${channelId}:`, err);
                         continue;
                     };
 
@@ -362,7 +362,7 @@ export const monitorJob = async () => {
 
                 }; //end for city
             } catch (err) {
-                console.error("Critical failure in flood check:", err);
+                console.error("[ERROR] Critical failure during flood monitoring cycle:", err);
             }
         },
         { timezone: "America/Recife" },
