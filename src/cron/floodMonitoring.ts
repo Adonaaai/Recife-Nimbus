@@ -323,7 +323,7 @@ export const monitorJob = async () => {
 
                     if (supressed) {
                         console.log(
-                            `[CITY] ${city.name} - ⏸ Channel alert suppressed by cooldown policy`,
+                            `[CITY] ${city.name} - ⏸ Channel alert suppressed by cooldown policy\n\n`,
                         );
                         continue;
                     };
@@ -333,7 +333,7 @@ export const monitorJob = async () => {
                     // If this condition is false, it means we going to send a general alert for the channel.
                     if (redZones.length === 0 || supressed) {
                         console.log(
-                            `[CITY] ${city.name} - No channel alert needed (no RED zones detected)`,
+                            `[CITY] ${city.name} - No channel alert needed (no RED zones detected)\n\n`,
                         );
                         continue;
                     };
