@@ -1,485 +1,395 @@
 ﻿import 'dotenv/config';
+import fs from 'fs';
+import path from 'path';
 import { prisma } from '../src/lib/prisma.js';
-import neighborhoodsOfficial from '../src/config/neighborhoods-official.json';
 
-/**
- * Zone configuration: maps zone names to sensors and river basins
- * Structure: { cityName: { zoneName: { sensors: [...], basins: [...], lat, lng } } }
- */
-const zoneConfig: Record<
-  string,
-  Record<string, { sensors: string[]; basins: string[]; lat: number; lng: number }>
-> = {
-  Recife: {
-    'Centro (Ilhas e Arredores)': {
-      sensors: ['[CEMADEN] Porto', '[APAC] Sede'],
-      basins: ['Capibaribe'],
-      lat: -8.054,
-      lng: -34.863,
+// Estrutura que une a sua organização de bairros com as coordenadas geográficas individuais
+interface EstruturaZona {
+  lat: number;
+  lng: number;
+  neighborhoods: string[];
+}
+
+const geoZonesData: Record<string, Record<string, EstruturaZona>> = {
+  "Abreu e Lima": {
+    "Zona Central e BR-101": { 
+      lat: -7.895, lng: -34.942, 
+      neighborhoods: ["Centro", "Desterro", "Timbó"] 
     },
-    'Zona Norte (Eixo Tradicional)': {
-      sensors: ['[CEMADEN] Compaz - Alto Sta. Terezinha [G]', '[CEMADEN] Torreão'],
-      basins: ['Beberibe', 'Capibaribe'],
-      lat: -8.015,
-      lng: -34.893,
+    "Região de Caetés (Zona Oeste)": { 
+      lat: -7.900, lng: -34.955, 
+      neighborhoods: ["Alto da Bela Vista", "Caetés I", "Caetés II", "Caetés III", "Planalto"] 
     },
-    'Zona Noroeste (Eixo Casa Amarela e Morros)': {
-      sensors: ['[APAC] UPA Nova Descoberta', '[APAC] Guabiraba'],
-      basins: ['Capibaribe'],
-      lat: -7.993,
-      lng: -34.934,
-    },
-    'Zona Oeste (Eixo Caxangá)': {
-      sensors: ['[CEMADEN] Barreira [G]', '[CEMADEN] Universidade Federal Rural de Pernambuco'],
-      basins: ['Capibaribe'],
-      lat: -8.021,
-      lng: -34.956,
-    },
-    'Zona Sudoeste (Eixo Av. Recife e Abdias)': {
-      sensors: ['[CEMADEN] San Martin', '[CEMADEN] Areias'],
-      basins: ['Tejipió'],
-      lat: -8.087,
-      lng: -34.927,
-    },
-    'Zona Sul (Eixo Orla e Mascarenhas)': {
-      sensors: ['[APAC] UPA Imbiribeira', '[CEMADEN] Pina', '[CEMADEN] Ibura'],
-      basins: ['GL2'],
-      lat: -8.115,
-      lng: -34.885,
-    },
+    "Zona Rural e Norte": { 
+      lat: -7.885, lng: -34.930, 
+      neighborhoods: ["Fosfato", "Matinha"] 
+    }
   },
-  Olinda: {
-    'Sítio Histórico e Arredores': {
-      sensors: ['[APAC] Ouro Preto'],
-      basins: ['Capibaribe'],
-      lat: -7.986,
-      lng: -34.855,
-    },
-    'Orla Leste': {
-      sensors: ['[CEMADEN] Espaço Ciencia'],
-      basins: ['Capibaribe'],
-      lat: -7.995,
-      lng: -34.845,
-    },
-    'Fronteira Sudoeste (Com Recife)': {
-      sensors: ['[APAC] Ouro Preto'],
-      basins: ['Capibaribe'],
-      lat: -8.005,
-      lng: -34.865,
-    },
-    'Eixo Central e Oeste': {
-      sensors: ['[APAC] Ouro Preto'],
-      basins: ['Capibaribe'],
-      lat: -8.010,
-      lng: -34.880,
-    },
-    'Região dos Altos (Noroeste)': {
-      sensors: ['[CEMADEN] Espaço Ciencia'],
-      basins: ['Capibaribe'],
-      lat: -8.000,
-      lng: -34.870,
-    },
+  "Araçoiaba": {
+    "Zona Central e Adjacências": { 
+      lat: -7.789, lng: -35.092, 
+      neighborhoods: ["Centro", "Canaã", "Loteamento Flores", "Nova Araçoiaba"] 
+    }
   },
-  'Jaboatão dos Guararapes': {
-    'Jaboatão Centro (Leste e Interior)': {
-      sensors: ['[CEMADEN] Engenho Velho [H]'],
-      basins: ['Ipojuca', 'Capibaribe'],
-      lat: -8.112,
-      lng: -35.020,
+  "Cabo de Santo Agostinho": {
+    "Distrito Sede e Acessos": { 
+      lat: -8.143, lng: -34.930, 
+      neighborhoods: ["Centro", "Destilaria", "São Francisco", "Torrinha"] 
     },
-    'Cavaleiro e Oeste': {
-      sensors: ['[CEMADEN] Alto Do Reservatório [G]'],
-      basins: ['Capibaribe'],
-      lat: -8.105,
-      lng: -35.035,
+    "Zona Norte (Divisa Jaboatão)": { 
+      lat: -8.130, lng: -34.920, 
+      neighborhoods: ["Ponte dos Carvalhos", "Pontezinha"] 
     },
-    'Curado (Noroeste)': {
-      sensors: ['[CEMADEN] Alto Do Reservatório [G]'],
-      basins: ['Capibaribe'],
-      lat: -8.100,
-      lng: -35.025,
+    "Zona Sul e Oeste (Rural e Rodovias)": { 
+      lat: -8.155, lng: -34.940, 
+      neighborhoods: ["Charneca", "Juçaral", "Manoel Lourenço"] 
     },
-    'Muribeca (Eixo BR-101)': {
-      sensors: ['[CEMADEN] Piedade'],
-      basins: ['Ipojuca', 'Capibaribe'],
-      lat: -8.120,
-      lng: -35.035,
-    },
-    'Prazeres e Eixo Sul': {
-      sensors: ['[CEMADEN] Piedade'],
-      basins: ['GL2'],
-      lat: -8.130,
-      lng: -35.025,
-    },
-    'Litoral': {
-      sensors: ['[CEMADEN] Piedade'],
-      basins: ['GL2'],
-      lat: -8.145,
-      lng: -35.010,
-    },
+    "Zona Litorânea (Leste)": { 
+      lat: -8.160, lng: -34.905, 
+      neighborhoods: ["Calhetas", "Enseada dos Corais", "Gaibu", "Itapuama", "Suape"] 
+    }
   },
-  Paulista: {
-    'Centro e Norte': {
-      sensors: ['[CEMADEN] Janga'],
-      basins: ['Capibaribe'],
-      lat: -7.944,
-      lng: -34.855,
+  "Camaragibe": {
+    "Zona Central (Núcleo Histórico)": { 
+      lat: -8.037, lng: -34.966, 
+      neighborhoods: ["Bairro Novo do Carmelo", "Centro", "Timbi", "Vila da Fábrica"] 
     },
-    'Eixo PE-15 e Oeste': {
-      sensors: ['[APAC] Janga 2', 'Paratibe'],
-      basins: ['Capibaribe'],
-      lat: -7.950,
-      lng: -34.870,
+    "Zona Leste (Divisa com Recife)": { 
+      lat: -8.030, lng: -34.955, 
+      neighborhoods: ["Bairro dos Estados"] 
     },
-    'Litoral': {
-      sensors: ['[CEMADEN] Janga'],
-      basins: ['Capibaribe'],
-      lat: -7.935,
-      lng: -34.840,
+    "Eixo Sul (Divisa com São Lourenço)": { 
+      lat: -8.045, lng: -34.975, 
+      neighborhoods: ["Alberto Maia", "Santana"] 
     },
+    "Zona Oeste (Morros e Vales)": { 
+      lat: -8.040, lng: -34.985, 
+      neighborhoods: ["Jardim Primavera", "João Paulo II", "Santa Monica", "Santa Tereza", "São João e São Paulo", "Vale das Pedreiras"] 
+    },
+    "Eixo Norte (Estrada de Aldeia - PE-027)": { 
+      lat: -8.025, lng: -34.960, 
+      neighborhoods: ["Aldeia de Baixo", "Aldeia dos Camarás", "Céu Azul", "Tabatinga", "Vera Cruz"] 
+    }
   },
-  'Cabo de Santo Agostinho': {
-    'Sede e Vias de Acesso': {
-      sensors: ['[APAC] Torrinha'],
-      basins: ['Ipojuca'],
-      lat: -8.143,
-      lng: -34.930,
+  "Goiana": {
+    "Distrito Sede (Urbano)": { 
+      lat: -7.449, lng: -34.915, 
+      neighborhoods: ["Centro", "Flexeiras", "Mutirão", "Nova Goiana"] 
     },
-    'Norte (Divisa Jaboatão)': {
-      sensors: ['[CEMADEN] Pontes dos Carvalhos'],
-      basins: ['Ipojuca', 'Capibaribe'],
-      lat: -8.130,
-      lng: -34.920,
+    "Zona Litorânea": { 
+      lat: -7.435, lng: -34.900, 
+      neighborhoods: ["Carne de Vaca", "Pontas de Pedra"] 
     },
-    'Sul e Oeste (Rodovias e Rural)': {
-      sensors: ['[APAC] Charneca'],
-      basins: ['Ipojuca'],
-      lat: -8.155,
-      lng: -34.940,
-    },
-    'Litoral Leste': {
-      sensors: ['[CEMADEN] Pirapama [G]', '[CEMADEN] Enseada dos Corais'],
-      basins: ['Sirinhaém'],
-      lat: -8.160,
-      lng: -34.905,
-    },
+    "Distritos Históricos e Rurais": { 
+      lat: -7.460, lng: -34.930, 
+      neighborhoods: ["São Lourenço", "Tejucupapo"] 
+    }
   },
-  Camaragibe: {
-    'Centro e Arredores (Núcleo Histórico)': {
-      sensors: ['[CEMADEN] Convento Carmelo [G]'],
-      basins: ['Capibaribe'],
-      lat: -8.037,
-      lng: -34.966,
+  "Igarassu": {
+    "Zona Centro-Leste (Histórico e Litoral)": { 
+      lat: -7.787, lng: -34.888, 
+      neighborhoods: ["Campina de Feira", "Centro"] 
     },
-    'Divisa com Recife (Zona Leste)': {
-      sensors: ['[APAC] Jardim Primavera'],
-      basins: ['Capibaribe'],
-      lat: -8.030,
-      lng: -34.955,
+    "Zona Sul (Divisa Abreu e Lima)": { 
+      lat: -7.800, lng: -34.895, 
+      neighborhoods: ["Agamenon Magalhães", "Cruz de Rebouças"] 
     },
-    'Eixo Sul (Divisa com São Lourenço da Mata)': {
-      sensors: ['[CEMADEN] Aldeia'],
-      basins: ['Capibaribe'],
-      lat: -8.045,
-      lng: -34.975,
-    },
-    'Região dos Morros e Vales (Zona Oeste)': {
-      sensors: ['[APAC] Jardim Primavera'],
-      basins: ['Capibaribe'],
-      lat: -8.040,
-      lng: -34.985,
-    },
-    'Eixo Norte e Estrada de Aldeia (PE-027)': {
-      sensors: ['[CEMADEN] Aldeia'],
-      basins: ['Capibaribe'],
-      lat: -8.025,
-      lng: -34.960,
-    },
+    "Zona Oeste e Interior": { 
+      lat: -7.795, lng: -34.910, 
+      neighborhoods: ["Inhamã", "Santo Antônio", "Três Ladeiras"] 
+    }
   },
-  Igarassu: {
-    'Centro e Leste (Histórico e Litoral)': {
-      sensors: ['[APAC] Alto do Céu'],
-      basins: ['Capibaribe'],
-      lat: -7.787,
-      lng: -34.888,
+  "Ilha de Itamaracá": {
+    "Zona Central (Pilar e Entorno)": { 
+      lat: -7.774, lng: -34.364, 
+      neighborhoods: ["Baixa Verde", "Pilar", "Rio Âmbar"] 
     },
-    'Sul (Divisa Abreu e Lima)': {
-      sensors: ['[CEMADEN] Cruz de Rebouças 2'],
-      basins: ['Goiana'],
-      lat: -7.800,
-      lng: -34.895,
+    "Zona Litorânea Norte": { 
+      lat: -7.760, lng: -34.350, 
+      neighborhoods: ["Jaguaribe", "Sossego"] 
     },
-    'Oeste e Interior': {
-      sensors: ['[APAC] Alto do Céu'],
-      basins: ['Goiana', 'Capibaribe'],
-      lat: -7.795,
-      lng: -34.910,
-    },
+    "Zona Litorânea Sul": { 
+      lat: -7.785, lng: -34.375, 
+      neighborhoods: ["Forte Orange"] 
+    }
   },
-  'Abreu e Lima': {
-    'Centro e BR-101': {
-      sensors: [],
-      basins: ['Capibaribe'],
-      lat: -7.895,
-      lng: -34.942,
+  "Ipojuca": {
+    "Distrito Sede e Entorno": { 
+      lat: -8.397, lng: -35.046, 
+      neighborhoods: ["Centro", "Rurópolis"] 
     },
-    'Região de Caetés (Zona Oeste)': {
-      sensors: [],
-      basins: ['Capibaribe'],
-      lat: -7.900,
-      lng: -34.955,
+    "Distrito de Nossa Senhora do Ó": { 
+      lat: -8.390, lng: -35.035, 
+      neighborhoods: ["Nossa Senhora do Ó"] 
     },
-    'Área Rural e Norte': {
-      sensors: [],
-      basins: ['Capibaribe'],
-      lat: -7.885,
-      lng: -34.930,
+    "Zona Litorânea (Porto)": { 
+      lat: -8.410, lng: -35.050, 
+      neighborhoods: ["Maracaípe", "Muro Alto", "Porto de Galinhas"] 
     },
+    "Zona Sul e Rural": { 
+      lat: -8.420, lng: -35.060, 
+      neighborhoods: ["Camela", "Serrambi"] 
+    }
   },
-  Ipojuca: {
-    'Sede e Entorno': {
-      sensors: ['[CEMADEN] Rurópolis'],
-      basins: ['Ipojuca'],
-      lat: -8.397,
-      lng: -35.046,
+  "Itapissuma": {
+    "Zona Central e Orla": { 
+      lat: -7.867, lng: -34.994, 
+      neighborhoods: ["Camboa", "Centro", "Mangue Seco"] 
     },
-    'Leste (Rota do Mar)': {
-      sensors: ['[APAC] Núcleo Maranhão'],
-      basins: ['Ipojuca'],
-      lat: -8.390,
-      lng: -35.035,
-    },
-    'Litoral': {
-      sensors: ['[APAC] IFPE'],
-      basins: ['Ipojuca'],
-      lat: -8.410,
-      lng: -35.050,
-    },
-    'Sul e Rural': {
-      sensors: ['[CEMADEN] Rurópolis'],
-      basins: ['Ipojuca'],
-      lat: -8.420,
-      lng: -35.060,
-    },
+    "Zona Oeste e Interior": { 
+      lat: -7.875, lng: -35.005, 
+      neighborhoods: ["Grussaí", "Loteamento Cidade da Criança"] 
+    }
   },
-  'São Lourenço da Mata': {
-    'Centro e Bairros Vizinhos': {
-      sensors: ['[CEMADEN] Rua dos Milagres'],
-      basins: ['Capibaribe'],
-      lat: -7.951,
-      lng: -35.022,
+  "Jaboatão dos Guararapes": {
+    "Regional 1 - Jaboatão Centro": { 
+      lat: -8.112, lng: -35.020, 
+      neighborhoods: ["Bulhões", "Centro", "Engenho Velho", "Manassu", "Santo Aleixo", "Socorro", "Vila Rica", "Vista Alegre"] 
     },
-    'Eixo Norte e Noroeste (PE-090)': {
-      sensors: ['[APAC] Chã da Tábua'],
-      basins: ['Capibaribe'],
-      lat: -7.940,
-      lng: -35.030,
+    "Regional 2 - Cavaleiro": { 
+      lat: -8.105, lng: -35.035, 
+      neighborhoods: ["Cavaleiro", "Dois Carneiros", "Jaboatãozinho", "Sucupira", "Zumbi do Pacheco"] 
     },
-    'Eixo Sul e Leste': {
-      sensors: ['ETA Castelo Branco'],
-      basins: ['Capibaribe'],
-      lat: -7.960,
-      lng: -35.010,
+    "Regional 3 - Curado": { 
+      lat: -8.100, lng: -35.025, 
+      neighborhoods: ["Curado I", "Curado II", "Curado III", "Curado IV", "Curado V"] 
     },
-    'Distritos Rurais': {
-      sensors: ['ETA Castelo Branco'],
-      basins: ['Capibaribe'],
-      lat: -7.970,
-      lng: -35.040,
+    "Regional 4 - Muribeca": { 
+      lat: -8.120, lng: -35.035, 
+      neighborhoods: ["Marcos Freire", "Muribeca", "Muribeca dos Guararapes"] 
     },
+    "Regional 5 - Prazeres": { 
+      lat: -8.130, lng: -35.025, 
+      neighborhoods: ["Cajueiro Seco", "Guararapes", "Jardim Jordão", "Prazeres"] 
+    },
+    "Regional 6 - Praias (Litoral)": { 
+      lat: -8.145, lng: -35.010, 
+      neighborhoods: ["Barra de Jangada", "Candeias", "Piedade"] 
+    }
   },
-  Itapissuma: {
-    'Centro e Orla': {
-      sensors: ['[APAC] Colégio Municipal'],
-      basins: ['Capibaribe'],
-      lat: -7.867,
-      lng: -34.994,
+  "Moreno": {
+    "Distrito Sede": { 
+      lat: -8.061, lng: -35.050, 
+      neighborhoods: ["Centro", "Oiteiro", "Pedreiras", "Valtelice"] 
     },
-    'Oeste e Interior': {
-      sensors: ['[APAC] Colégio Municipal'],
-      basins: ['Capibaribe'],
-      lat: -7.875,
-      lng: -35.005,
-    },
+    "Distrito de Bonança": { 
+      lat: -8.070, lng: -35.060, 
+      neighborhoods: ["Bonança"] 
+    }
   },
-  Moreno: {
-    'Sede': {
-      sensors: ['[APAC] Centro'],
-      basins: ['Capibaribe'],
-      lat: -8.061,
-      lng: -35.050,
+  "Olinda": {
+    "Região Administrativa 1 - Histórica": { 
+      lat: -7.986, lng: -34.855, 
+      neighborhoods: ["Amaro Branco", "Amparo", "Bonsucesso", "Carmo", "Guadalupe", "Monte", "Santa Tereza", "Varadouro"] 
     },
-    'Distritos': {
-      sensors: ['[APAC] Bonança'],
-      basins: ['Capibaribe'],
-      lat: -8.070,
-      lng: -35.060,
+    "Região Administrativa 2 - Litorânea": { 
+      lat: -7.995, lng: -34.845, 
+      neighborhoods: ["Bairro Novo", "Casa Caiada", "Jardim Atlântico", "Rio Doce"] 
     },
+    "Região Administrativa 3 - Sul": { 
+      lat: -8.005, lng: -34.865, 
+      neighborhoods: ["Aguazinha", "Jardim Brasil", "Peixinhos", "Salgadinho", "Sítio Novo", "Vila Popular"] 
+    },
+    "Região Administrativa 4 - Central e Oeste": { 
+      lat: -8.010, lng: -34.880, 
+      neighborhoods: ["Bultrins", "Fragoso", "Jatobá", "Ouro Preto", "São Benedito"] 
+    },
+    "Região Administrativa 5 - Altos": { 
+      lat: -8.000, lng: -34.870, 
+      neighborhoods: ["Águas Compridas", "Alto da Bondade", "Alto da Conquista", "Alto da Nação", "Alto Novo Olinda", "Caixa d'Água", "Passarinho", "Tabajara"] 
+    }
   },
-  'Ilha de Itamaracá': {
-    'Centro (Pilar e Arredores)': {
-      sensors: ['[APAC] Pilar'],
-      basins: [],
-      lat: -7.774,
-      lng: -34.364,
+  "Paulista": {
+    "Zona Central e Norte": { 
+      lat: -7.944, lng: -34.855, 
+      neighborhoods: ["Arthur Lundgren I", "Arthur Lundgren II", "Aurora", "Centro"] 
     },
-    'Litoral Norte': {
-      sensors: ['[APAC] Pilar'],
-      basins: [],
-      lat: -7.760,
-      lng: -34.350,
+    "Eixo PE-15 e Oeste": { 
+      lat: -7.950, lng: -34.870, 
+      neighborhoods: ["Jardim Maranguape", "Jardim Paulista", "Maranguape I", "Maranguape II", "Paratibe"] 
     },
-    'Litoral Sul': {
-      sensors: ['[APAC] Pilar'],
-      basins: [],
-      lat: -7.785,
-      lng: -34.375,
-    },
+    "Zona Litorânea": { 
+      lat: -7.935, lng: -34.840, 
+      neighborhoods: ["Conceição", "Janga", "Maria Farinha", "Pau Amarelo"] 
+    }
   },
-  Goiana: {
-    'Sede (Centro e Bairros)': {
-      sensors: ['[CEMADEN] Centro', '[APAC] Ponta de Pedra'],
-      basins: ['Goiana'],
-      lat: -7.449,
-      lng: -34.915,
+  "Recife": {
+    "RPA 1 - Centro": { 
+      lat: -8.054, lng: -34.863, 
+      neighborhoods: ["Bairro do Recife", "Boa Vista", "Cabanga", "Coelhos", "Derby", "Ilha do Leite", "Ilha Joana Bezerra", "Paissandu", "Santo Amaro", "Santo Antônio", "São José"] 
     },
-    'Litoral': {
-      sensors: ['[APAC] [ETA Compesa]'],
-      basins: ['Goiana'],
-      lat: -7.435,
-      lng: -34.900,
+    "RPA 2 - Norte": { 
+      lat: -8.015, lng: -34.893, 
+      neighborhoods: ["Água Fria", "Arruda", "Beberibe", "Bomba do Hemetério", "Cajueiro", "Campina do Barreto", "Campo Grande", "Encruzilhada", "Espinheiro", "Fundão", "Hipódromo", "Linha do Tiro", "Ponto de Parada", "Porto da Madeira", "Rosarinho", "Torreão"] 
     },
-    'Distritos Históricos e Rurais': {
-      sensors: ['[CEMADEN] Centro'],
-      basins: ['Goiana'],
-      lat: -7.460,
-      lng: -34.930,
+    "RPA 3 - Noroeste": { 
+      lat: -7.993, lng: -34.934, 
+      neighborhoods: ["Aflitos", "Alto do Mandu", "Alto José Bonifácio", "Alto José do Pinho", "Apipucos", "Brejo da Guabiraba", "Brejo de Beberibe", "Casa Amarela", "Casa Forte", "Córrego do Jenipapo", "Dois Irmãos", "Dois Unidos", "Graças", "Guabiraba", "Jaqueira", "Macaxeira", "Mangabeira", "Monteiro", "Nova Descoberta", "Parnamirim", "Passarinho", "Pau-Ferro", "Poço da Panela", "Santana", "Sítio dos Pintos", "Tamarineira", "Vasco da Gama"] 
     },
+    "RPA 4 - Oeste": { 
+      lat: -8.021, lng: -34.956, 
+      neighborhoods: ["Caxangá", "Cidade Universitária", "Cordeiro", "Engenho do Meio", "Ilha do Retiro", "Iputinga", "Madalena", "Prado", "Torre", "Torrões", "Várzea", "Zumbi"] 
+    },
+    "RPA 5 - Sudoeste": { 
+      lat: -8.087, lng: -34.927, 
+      neighborhoods: ["Afogados", "Areias", "Barro", "Bongi", "Caçote", "Coqueiral", "Curado", "Estância", "Jardim São Paulo", "Jiquiá", "Mangueira", "Mustardinha", "San Martin", "Sancho", "Tejipió", "Totó"] 
+    },
+    "RPA 6 - Sul": { 
+      lat: -8.115, lng: -34.885, 
+      neighborhoods: ["Boa Viagem", "Brasília Teimosa", "Cohab", "Ibura", "Imbiribeira", "Ipsep", "Jordão", "Pina"] 
+    }
   },
-  Araçoiaba: {
-    'Centro e Bairros': {
-      sensors: ['[APAC]'],
-      basins: ['Goiana'],
-      lat: -7.789,
-      lng: -35.092,
+  "São Lourenço da Mata": {
+    "Zona Central e Adjacências": { 
+      lat: -7.951, lng: -35.022, 
+      neighborhoods: ["Centro", "Capibaribe", "Parque Capibaribe", "Pixete"] 
     },
-  },
+    "Eixo Norte e Noroeste (PE-090)": { 
+      lat: -7.940, lng: -35.030, 
+      neighborhoods: ["Penedo", "Tiúma"] 
+    },
+    "Eixo Sul e Leste": { 
+      lat: -7.960, lng: -35.010, 
+      neighborhoods: ["Muribara", "Várzea Fria"] 
+    },
+    "Distritos Rurais": { 
+      lat: -7.970, lng: -35.040, 
+      neighborhoods: ["Lajes", "Matriz da Luz"] 
+    }
+  }
 };
 
+function verificarSeEhLitoral(zoneName: string): boolean {
+  const nomeLower = zoneName.toLowerCase();
+  return nomeLower.includes('litorânea') || nomeLower.includes('litoral') || nomeLower.includes('orla') || nomeLower.includes('praia');
+}
+
+function calcularDistanciaKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 async function main() {
-  console.log('🌱 Seeding Recife Nimbus database...\n');
+  console.log('🌱 Iniciando processamento com estrutura final de zonas e bairros...');
+  console.log('📍 Caminho do arquivo de chuvas:', path.resolve(process.cwd(), 'met_monitoring_chuvas_pe01.json'));
 
-  let totalZones = 0;
-  let totalNeighborhoods = 0;
+  const chuvasPath = path.resolve(process.cwd(), 'met_monitoring_chuvas_pe01.json');
+  let rainSensorFeatures: any[] = [];
 
-  // Process each city from neighborhoods-official.json
-  for (const cityName of Object.keys(neighborhoodsOfficial)) {
-    const cityZones = (neighborhoodsOfficial as Record<string, Record<string, string[]>>)[cityName];
+  if (fs.existsSync(chuvasPath)) {
+    const rawData = JSON.parse(fs.readFileSync(chuvasPath, 'utf-8'));
+    rainSensorFeatures = rawData.features || [];
+    console.log(`📦 Carregados ${rainSensorFeatures.length} sensores de chuva do JSON.`);
+  } else {
+    console.error(`❌ Arquivo JSON de chuvas não encontrado.`);
+    process.exit(1);
+  }
 
-    // Ensure city exists
-    const city = await prisma.city.upsert({
-      where: { name: cityName },
-      update: {},
-      create: { name: cityName },
-    });
+  console.log('🧹 Limpando tabelas: AlertLog, CityAlertLog, Neighborhood, Zone, City, User');
+  await prisma.alertLog.deleteMany({});
+  await prisma.cityAlertLog.deleteMany({});
+  await prisma.neighborhood.deleteMany({});
+  await prisma.zone.deleteMany({});
+  await prisma.city.deleteMany({});
+  await prisma.user.deleteMany({});
+  console.log('🔄 Tabelas do banco de dados resetadas.');
 
-    console.log(`\n📍 City: ${cityName}`);
+  const RAIO_MAXIMO_KM = 3.8;
+  console.log(`📏 Usando raio máximo de ${RAIO_MAXIMO_KM} km para vincular sensores às zonas.`);
 
-    // Process each zone in the city
-    for (const zoneName of Object.keys(cityZones)) {
-      const neighborhoods = cityZones[zoneName];
-      const config = zoneConfig[cityName]?.[zoneName];
+  for (const [cityName, zones] of Object.entries(geoZonesData)) {
+    console.log(`🏙️ Inserindo Cidade: ${cityName} (${Object.keys(zones).length} zonas) `);
+    const city = await prisma.city.create({ data: { name: cityName } });
 
-      if (!config) {
-        console.warn(`  ⚠️  No config found for zone: ${zoneName}`);
-        continue;
+    for (const [zoneName, zoneInfo] of Object.entries(zones)) {
+      const nomeUnicoZona = `${cityName} - ${zoneName}`;
+      const ehLitoral = verificarSeEhLitoral(zoneName);
+
+      console.log(`   ➤ Processando zona: ${nomeUnicoZona}`);
+      const sensoresVinculados: string[] = [];
+      const baciasVinculadas = new Set<string>();
+
+      for (const feature of rainSensorFeatures) {
+        const attr = feature.attributes;
+        if (!attr || attr.latitude === undefined || attr.longitude === undefined) continue;
+
+        const distancia = calcularDistanciaKm(
+          zoneInfo.lat,
+          zoneInfo.lng,
+          attr.latitude,
+          attr.longitude
+        );
+
+        if (distancia <= RAIO_MAXIMO_KM) {
+          sensoresVinculados.push(attr.nome);
+          if (attr.bacia) baciasVinculadas.add(attr.bacia);
+        }
       }
 
-      // Create or update zone
-      const zone = await prisma.zone.upsert({
-        where: { name: zoneName },
-        update: {
-          latitude: config.lat,
-          longitude: config.lng,
-          rainSensorNames: config.sensors.filter(Boolean),
-          riverBasins: config.basins.filter(Boolean),
+      if (sensoresVinculados.length === 0 && rainSensorFeatures.length > 0) {
+        let sensorMaisProximo: any = null;
+        let menorDistancia = Infinity;
+
+        for (const feature of rainSensorFeatures) {
+          const attr = feature.attributes;
+          if (!attr || attr.latitude === undefined || attr.longitude === undefined) continue;
+
+          const dist = calcularDistanciaKm(zoneInfo.lat, zoneInfo.lng, attr.latitude, attr.longitude);
+          if (dist < menorDistancia) {
+            menorDistancia = dist;
+            sensorMaisProximo = attr;
+          }
+        }
+
+        if (sensorMaisProximo) {
+          sensoresVinculados.push(sensorMaisProximo.nome);
+          if (sensorMaisProximo.bacia) baciasVinculadas.add(sensorMaisProximo.bacia);
+          console.log(`   ⚠️ Zona [${zoneName}] ativou fallback espacial: associou [${sensorMaisProximo.nome}] a ${menorDistancia.toFixed(2)}km.`);
+        }
+      }
+
+      const sensoresFinais = Array.from(new Set(sensoresVinculados));
+      console.log(`   📍 Zona [${zoneName}]: Vinculados ${sensoresFinais.length} sensores num raio de ${RAIO_MAXIMO_KM}km.`);
+      console.log(`      - Coordenadas da zona: ${zoneInfo.lat}, ${zoneInfo.lng}`);
+      console.log(`      - É litoral? ${ehLitoral}`);
+
+      const zone = await prisma.zone.create({
+        data: {
+          name: nomeUnicoZona,
+          isCoastal: ehLitoral,
+          latitude: zoneInfo.lat,
+          longitude: zoneInfo.lng,
           cityId: city.id,
-        },
-        create: {
-          name: zoneName,
-          latitude: config.lat,
-          longitude: config.lng,
-          rainSensorNames: config.sensors.filter(Boolean),
-          riverBasins: config.basins.filter(Boolean),
-          cityId: city.id,
-        },
+          rainSensorNames: sensoresFinais,
+          riverBasins: Array.from(baciasVinculadas)
+        }
       });
 
-      console.log(`  ✅ Zone: ${zoneName}`);
-      console.log(`     • Sensors: ${config.sensors.filter(Boolean).length}`);
-      console.log(`     • Basins: ${config.basins.filter(Boolean).length}`);
+      console.log(`      - Zona criada com id ${zone.id}`);
 
-      // Upsert neighborhoods
-      let neighborhoodCount = 0;
-      for (const neighborhoodName of neighborhoods) {
-        await prisma.neighborhood.upsert({
-          where: {
-            name_zoneId: {
-              name: neighborhoodName.trim(),
-              zoneId: zone.id,
-            },
-          },
-          update: {},
-          create: {
-            name: neighborhoodName.trim(),
-            zoneId: zone.id,
-          },
+      if (zoneInfo.neighborhoods.length > 0) {
+        console.log(`      - Inserindo ${zoneInfo.neighborhoods.length} bairros.`);
+        await prisma.neighborhood.createMany({
+          data: zoneInfo.neighborhoods.map(bairroNome => ({
+            name: bairroNome,
+            zoneId: zone.id
+          }))
         });
-        neighborhoodCount++;
       }
-
-      console.log(`     • Neighborhoods: ${neighborhoodCount}`);
-      totalZones++;
-      totalNeighborhoods += neighborhoodCount;
     }
   }
 
-  // Print summary
-  console.log(`\n✨ Seed completed!`);
-  console.log(`   • Total zones: ${totalZones}`);
-  console.log(`   • Total neighborhoods: ${totalNeighborhoods}`);
-
-  // Print city summaries
-  console.log(`\n📊 City summaries:`);
-  const cities = await prisma.city.findMany({
-    include: { zones: { include: { neighborhoods: true } } },
-  });
-
-  for (const city of cities) {
-    const zones = city.zones ?? [];
-    if (zones.length === 0) continue;
-
-    const rainSet = new Set<string>();
-    const basinSet = new Set<string>();
-    let neighborhoodCount = 0;
-
-    for (const zone of zones) {
-      (zone.rainSensorNames ?? []).forEach((s) => rainSet.add(s));
-      (zone.riverBasins ?? []).forEach((b) => basinSet.add(b));
-      neighborhoodCount += (zone.neighborhoods ?? []).length;
-    }
-
-    console.log(`\n  ${city.name}`);
-    console.log(`    Zones: ${zones.length}`);
-    console.log(`    Unique sensors: ${rainSet.size}`);
-    console.log(`    Unique basins: ${basinSet.size}`);
-    console.log(`    Neighborhoods: ${neighborhoodCount}`);
-  }
+  console.log('✨ Seed executado com sucesso mantendo sua estrutura e alimentando os bairros corretamente!');
 }
 
 main()
-  .catch((err) => {
-    console.error('❌ Seed failed:', err);
+  .catch((e) => {
+    console.error('❌ Erro inesperado na execução:', e);
     process.exit(1);
   })
   .finally(async () => {

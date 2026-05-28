@@ -1,6 +1,6 @@
 ﻿{
   "Abreu e Lima": {
-    "Centro e BR-101": [
+    "Zona Central e BR-101": [
       "Centro",
       "Desterro",
       "Timbó"
@@ -12,13 +12,13 @@
       "Caetés III",
       "Planalto"
     ],
-    "Área Rural e Norte": [
+    "Zona Rural e Norte": [
       "Fosfato",
       "Matinha"
     ]
   },
   "Araçoiaba": {
-    "Centro e Bairros": [
+    "Zona Central e Adjacências": [
       "Centro",
       "Canaã",
       "Loteamento Flores",
@@ -26,22 +26,22 @@
     ]
   },
   "Cabo de Santo Agostinho": {
-    "Sede e Vias de Acesso": [
+    "Distrito Sede e Acessos": [
       "Centro",
       "Destilaria",
       "São Francisco",
       "Torrinha"
     ],
-    "Norte (Divisa Jaboatão)": [
+    "Zona Norte (Divisa Jaboatão)": [
       "Ponte dos Carvalhos",
       "Pontezinha"
     ],
-    "Sul e Oeste (Rodovias e Rural)": [
+    "Zona Sul e Oeste (Rural e Rodovias)": [
       "Charneca",
       "Juçaral",
       "Manoel Lourenço"
     ],
-    "Litoral Leste": [
+    "Zona Litorânea (Leste)": [
       "Calhetas",
       "Enseada dos Corais",
       "Gaibu",
@@ -50,20 +50,20 @@
     ]
   },
   "Camaragibe": {
-    "Centro e Arredores (Núcleo Histórico)": [
+    "Zona Central (Núcleo Histórico)": [
       "Bairro Novo do Carmelo",
       "Centro",
       "Timbi",
       "Vila da Fábrica"
     ],
-    "Divisa com Recife (Zona Leste)": [
+    "Zona Leste (Divisa com Recife)": [
       "Bairro dos Estados"
     ],
-    "Eixo Sul (Divisa com São Lourenço da Mata)": [
+    "Eixo Sul (Divisa com São Lourenço)": [
       "Alberto Maia",
       "Santana"
     ],
-    "Região dos Morros e Vales (Zona Oeste)": [
+    "Zona Oeste (Morros e Vales)": [
       "Jardim Primavera",
       "João Paulo II",
       "Santa Monica",
@@ -71,7 +71,7 @@
       "São João e São Paulo",
       "Vale das Pedreiras"
     ],
-    "Eixo Norte e Estrada de Aldeia (PE-027)": [
+    "Eixo Norte (Estrada de Aldeia - PE-027)": [
       "Aldeia de Baixo",
       "Aldeia dos Camarás",
       "Céu Azul",
@@ -80,13 +80,13 @@
     ]
   },
   "Goiana": {
-    "Sede (Centro e Bairros)": [
+    "Distrito Sede (Urbano)": [
       "Centro",
       "Flexeiras",
       "Mutirão",
       "Nova Goiana"
     ],
-    "Litoral": [
+    "Zona Litorânea": [
       "Carne de Vaca",
       "Pontas de Pedra"
     ],
@@ -96,149 +96,161 @@
     ]
   },
   "Igarassu": {
-    "Centro e Leste (Histórico e Litoral)": [
+    "Zona Centro-Leste (Histórico e Litoral)": [
       "Campina de Feira",
       "Centro"
     ],
-    "Sul (Divisa Abreu e Lima)": [
+    "Zona Sul (Divisa Abreu e Lima)": [
       "Agamenon Magalhães",
       "Cruz de Rebouças"
     ],
-    "Oeste e Interior": [
+    "Zona Oeste e Interior": [
       "Inhamã",
       "Santo Antônio",
       "Três Ladeiras"
     ]
   },
   "Ilha de Itamaracá": {
-    "Centro (Pilar e Arredores)": [
+    "Zona Central (Pilar e Entorno)": [
       "Baixa Verde",
       "Pilar",
       "Rio Âmbar"
     ],
-    "Litoral Norte": [
+    "Zona Litorânea Norte": [
       "Jaguaribe",
       "Sossego"
     ],
-    "Litoral Sul": [
+    "Zona Litorânea Sul": [
       "Forte Orange"
     ]
   },
   "Ipojuca": {
-    "Sede e Entorno": [
+    "Distrito Sede e Entorno": [
       "Centro",
       "Rurópolis"
     ],
-    "Leste (Rota do Mar)": [
+    "Distrito de Nossa Senhora do Ó": [
       "Nossa Senhora do Ó"
     ],
-    "Litoral": [
+    "Zona Litorânea (Porto)": [
       "Maracaípe",
       "Muro Alto",
       "Porto de Galinhas"
     ],
-    "Sul e Rural": [
+    "Zona Sul e Rural": [
       "Camela",
       "Serrambi"
     ]
   },
   "Itapissuma": {
-    "Centro e Orla": [
+    "Zona Central e Orla": [
       "Camboa",
       "Centro",
       "Mangue Seco"
     ],
-    "Oeste e Interior": [
+    "Zona Oeste e Interior": [
       "Grussaí",
       "Loteamento Cidade da Criança"
     ]
   },
   "Jaboatão dos Guararapes": {
-    "Jaboatão Centro (Leste e Interior)": [
+    "Regional 1 - Jaboatão Centro": [
+      "Bulhões",
       "Centro",
       "Engenho Velho",
+      "Manassu",
       "Santo Aleixo",
+      "Socorro",
       "Vila Rica",
       "Vista Alegre"
     ],
-    "Cavaleiro e Oeste": [
+    "Regional 2 - Cavaleiro": [
       "Cavaleiro",
       "Dois Carneiros",
+      "Jaboatãozinho",
       "Sucupira",
       "Zumbi do Pacheco"
     ],
-    "Curado (Noroeste)": [
+    "Regional 3 - Curado": [
       "Curado I",
       "Curado II",
       "Curado III",
       "Curado IV",
       "Curado V"
     ],
-    "Muribeca (Eixo BR-101)": [
+    "Regional 4 - Muribeca": [
       "Marcos Freire",
       "Muribeca",
       "Muribeca dos Guararapes"
     ],
-    "Prazeres e Eixo Sul": [
+    "Regional 5 - Prazeres": [
       "Cajueiro Seco",
       "Guararapes",
       "Jardim Jordão",
       "Prazeres"
     ],
-    "Litoral": [
+    "Regional 6 - Praias (Litoral)": [
       "Barra de Jangada",
       "Candeias",
       "Piedade"
     ]
   },
   "Moreno": {
-    "Sede": [
+    "Distrito Sede": [
       "Centro",
       "Oiteiro",
       "Pedreiras",
       "Valtelice"
     ],
-    "Distritos": [
+    "Distrito de Bonança": [
       "Bonança"
     ]
   },
   "Olinda": {
-    "Sítio Histórico e Arredores": [
+    "Região Administrativa 1 - Histórica": [
+      "Amaro Branco",
       "Amparo",
       "Bonsucesso",
       "Carmo",
       "Guadalupe",
+      "Monte",
+      "Santa Tereza",
       "Varadouro"
     ],
-    "Orla Leste": [
+    "Região Administrativa 2 - Litorânea": [
       "Bairro Novo",
       "Casa Caiada",
       "Jardim Atlântico",
       "Rio Doce"
     ],
-    "Fronteira Sudoeste (Com Recife)": [
+    "Região Administrativa 3 - Sul": [
+      "Aguazinha",
       "Jardim Brasil",
       "Peixinhos",
       "Salgadinho",
+      "Sítio Novo",
       "Vila Popular"
     ],
-    "Eixo Central e Oeste": [
+    "Região Administrativa 4 - Central e Oeste": [
+      "Bultrins",
       "Fragoso",
       "Jatobá",
-      "Ouro Preto"
+      "Ouro Preto",
+      "São Benedito"
     ],
-    "Região dos Altos (Noroeste)": [
+    "Região Administrativa 5 - Altos": [
       "Águas Compridas",
       "Alto da Bondade",
       "Alto da Conquista",
-      "Alto Nova Olinda",
+      "Alto da Nação",
+      "Alto Novo Olinda",
       "Caixa d'Água",
       "Passarinho",
       "Tabajara"
     ]
   },
   "Paulista": {
-    "Centro e Norte": [
+    "Zona Central e Norte": [
       "Arthur Lundgren I",
       "Arthur Lundgren II",
       "Aurora",
@@ -251,7 +263,7 @@
       "Maranguape II",
       "Paratibe"
     ],
-    "Litoral": [
+    "Zona Litorânea": [
       "Conceição",
       "Janga",
       "Maria Farinha",
@@ -259,7 +271,7 @@
     ]
   },
   "Recife": {
-    "Centro (Ilhas e Arredores)": [
+    "RPA 1 - Centro": [
       "Bairro do Recife",
       "Boa Vista",
       "Cabanga",
@@ -272,21 +284,26 @@
       "Santo Antônio",
       "São José"
     ],
-    "Zona Norte (Eixo Tradicional)": [
+    "RPA 2 - Norte": [
       "Água Fria",
       "Arruda",
       "Beberibe",
       "Bomba do Hemetério",
+      "Cajueiro",
+      "Campina do Barreto",
       "Campo Grande",
       "Encruzilhada",
       "Espinheiro",
+      "Fundão",
       "Hipódromo",
       "Linha do Tiro",
       "Ponto de Parada",
+      "Porto da Madeira",
       "Rosarinho",
       "Torreão"
     ],
-    "Zona Noroeste (Eixo Casa Amarela e Morros)": [
+    "RPA 3 - Noroeste": [
+      "Aflitos",
       "Alto do Mandu",
       "Alto José Bonifácio",
       "Alto José do Pinho",
@@ -297,20 +314,24 @@
       "Casa Forte",
       "Córrego do Jenipapo",
       "Dois Irmãos",
+      "Dois Unidos",
       "Graças",
+      "Guabiraba",
       "Jaqueira",
       "Macaxeira",
+      "Mangabeira",
       "Monteiro",
       "Nova Descoberta",
       "Parnamirim",
       "Passarinho",
+      "Pau-Ferro",
       "Poço da Panela",
       "Santana",
       "Sítio dos Pintos",
       "Tamarineira",
       "Vasco da Gama"
     ],
-    "Zona Oeste (Eixo Caxangá)": [
+    "RPA 4 - Oeste": [
       "Caxangá",
       "Cidade Universitária",
       "Cordeiro",
@@ -324,7 +345,7 @@
       "Várzea",
       "Zumbi"
     ],
-    "Zona Sudoeste (Eixo Av. Recife e Abdias)": [
+    "RPA 5 - Sudoeste": [
       "Afogados",
       "Areias",
       "Barro",
@@ -342,7 +363,7 @@
       "Tejipió",
       "Totó"
     ],
-    "Zona Sul (Eixo Orla e Mascarenhas)": [
+    "RPA 6 - Sul": [
       "Boa Viagem",
       "Brasília Teimosa",
       "Cohab",
@@ -354,7 +375,7 @@
     ]
   },
   "São Lourenço da Mata": {
-    "Centro e Bairros Vizinhos": [
+    "Zona Central e Adjacências": [
       "Centro",
       "Capibaribe",
       "Parque Capibaribe",
