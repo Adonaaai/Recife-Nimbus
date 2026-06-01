@@ -64,4 +64,3 @@ export class RateLimiter {
 
 // Global rate limiters for different command types
 export const commandLimiter = new RateLimiter(60000, 30); // 30 requests per minute
-export const alertLimiter = new RateLimiter(30000, 5); // 5 alerts per 30 seconds
