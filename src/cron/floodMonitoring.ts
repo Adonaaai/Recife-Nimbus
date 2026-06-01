@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { escapeMd, validateTimezone, sanitizeJsonString, getErrorMessage } from '../lib/validators';
 import { RainSensor, RiverSensor, Severity, SEVERITY_ORDER } from "./types/types.ts";
 import { getForecastTideHeight } from "./controllers/getForecastTideHeight.ts";
 import { getCurrentTideHeight } from "./controllers/getCurrentTideHeight.ts";
@@ -7,15 +8,17 @@ import { getForecastRainMm } from "./controllers/getForecastRainMm.ts";
 import { bot } from "../lib/bot.ts";
 import { prisma } from "../lib/prisma.ts";
 import { buildMessage, buildCityChannelMessage } from "./controllers/buildMessage";
-import { env } from "../config/env.ts";
 import cron from "node-cron";
 import axios from "axios";
+
+// Validated timezone string for cron scheduling.
+const timezoneValidate = validateTimezone("America/Recife");
+const timezone = timezoneValidate ? "America/Recife" : "UTC";
 
 // == Cooldown Zone guard ===================================================
 // Prevents alert spam by checking whether an alert of the same severity
 // was already sent for this zone within the cooldown window.
 // RED = 60 min cooldown | YELLOW = 180 min cooldown.
-
 const wasRecentlySentZone = async (
     zoneId: number,
     severity: Severity,
@@ -57,14 +60,10 @@ const wasRecentlySentCity = async (
     return existing !== null;
 };
 
-// Helper function to escape reserved MarkdownV2 characters
-const escapeMd = (text: string): string => {
-    return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
-};
-
 // Starts the real-time flood monitor. Runs a risk check every 15 minutes,
 // broadcasts Telegram alerts per zone, and logs every alert to the database.
 export const monitorJob = async () => {
+    
     const APAC_RIVER_URL =
         "https://geoportal.apac.pe.gov.br/server/rest/services/SIRH/mon_nivel_rios_pe/MapServer/0/query?where=1%3D1&outFields=*&f=json";
     const APAC_RAIN_URL =
@@ -320,6 +319,7 @@ export const monitorJob = async () => {
                         );
 
                     }; // end for zone
+
                     const supressed = await wasRecentlySentCity(city.id);
 
                     if (supressed) {
@@ -339,7 +339,17 @@ export const monitorJob = async () => {
                         continue;
                     };
 
-                    const channelId: number = env.getTelegramChannelId();
+                    const channelIdStr: string = `${process.env.TELEGRAM_CHANNEL_ID}`;
+                    const channelId: number = Number(channelIdStr);
+                    
+                    if (!channelIdStr) {
+                        throw new Error('TELEGRAM_CHANNEL_ID environment variable is not set.');
+                    };
+                    
+                    if (channelIdStr.trim() === "") {
+                        throw new Error('TELEGRAM_CHANNEL_ID environment variable is empty.');
+                    };
+
                     const channelMessage = buildCityChannelMessage(city.name, zoneSummaries);
 
                     try {
@@ -351,11 +361,14 @@ export const monitorJob = async () => {
                         console.error(`[TELEGRAM] Failed to send city alert to channel ${channelId}:`, err);
                         continue;
                     };
+                    
+                    // Preparing json data to database storage.
+                    const safeZoneSumaries = sanitizeJsonString(zoneSummaries);
 
                     await prisma.cityAlertLog.create({
                         data: {
                             cityId: city.id,
-                            alertedZones: JSON.stringify(zoneSummaries),
+                            alertedZones: safeZoneSumaries,
                             hasRedAlert: true,
                             severity: 'RED',
                             messageSent: channelMessage,
@@ -363,10 +376,12 @@ export const monitorJob = async () => {
                     });
 
                 }; //end for city
+
             } catch (err) {
                 console.error("[ERROR] Critical failure during flood monitoring cycle:", err);
             }
         },
-        { timezone: "America/Recife" },
+        
+        { timezone: timezone },
     );
 };
