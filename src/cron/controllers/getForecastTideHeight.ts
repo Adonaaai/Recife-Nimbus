@@ -1,4 +1,31 @@
 import tideData from '../../config/tides2026.json';
+import { z } from 'zod';
+
+// Validate tide data structure at import time.
+const TideSchema = z.object({
+    datetime: z.string(),
+    height_m: z.number()
+});
+
+const DaySchema = z.object({
+    date: z.string(),
+    tides: z.array(TideSchema)
+});
+
+const TideDataSchema = z.object({
+    days: z.array(DaySchema),
+    metadata: z.object({
+        mean_level_m: z.number()
+    })
+});
+
+let validatedTideData: z.infer<typeof TideDataSchema>;
+try {
+    validatedTideData = TideDataSchema.parse(tideData);
+} catch (err) {
+    console.error('[TIDE] Invalid tide data file:', err);
+    throw new Error('Failed to load tides2026.json - file appears to be corrupted or malformed');
+}
 
 export const getForecastTideHeight = (): number => {
     const now = new Date();
@@ -20,13 +47,13 @@ export const getForecastTideHeight = (): number => {
     const tomorrowStr = getRecifeDateStr(tomorrow);
 
     // Getting today and tomorrow objects.
-    const todayEntry = tideData.days.find((d) => d.date === todayStr);
-    const tomorrowEntry = tideData.days.find((d) => d.date === tomorrowStr);
+    const todayEntry = validatedTideData.days.find((d) => d.date === todayStr);
+    const tomorrowEntry = validatedTideData.days.find((d) => d.date === tomorrowStr);
 
     // If we don't have today tide, we use the mean level from the json file.
     if (!todayEntry) {
         console.warn(`[Tide] No data for ${todayStr}, using mean level`);
-        return tideData.metadata.mean_level_m;
+        return validatedTideData.metadata.mean_level_m;
     };
 
     //=== Today and tomorrow tides merged. =======================
