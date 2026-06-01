@@ -11,22 +11,22 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.7.0",
-    "@prisma/client": "^7.8.0",
-    "axios": "^1.14.0",
-    "dotenv": "^17.4.1",
-    "node-cron": "^4.2.1",
-    "pg": "^8.20.0",
-    "telegraf": "^4.16.3",
-    "telegraf-inline-menu": "^6.3.0",
-    "zod": "^4.3.6"
+    "@prisma/adapter-pg": "7.7.0",
+    "@prisma/client": "7.8.0",
+    "axios": "1.14.0",
+    "dotenv": "17.4.1",
+    "node-cron": "4.2.1",
+    "pg": "8.20.0",
+    "telegraf": "4.16.3",
+    "telegraf-inline-menu": "6.3.0",
+    "zod": "4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^25.5.2",
-    "@types/node-cron": "^3.0.11",
-    "@types/pg": "^8.20.0",
-    "prisma": "^7.8.0",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.2"
+    "@types/node": "25.5.2",
+    "@types/node-cron": "3.0.11",
+    "@types/pg": "8.20.0",
+    "prisma": "7.8.0",
+    "tsx": "4.21.0",
+    "typescript": "6.0.2"
   }
 }
