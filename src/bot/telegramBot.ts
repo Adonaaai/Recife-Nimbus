@@ -3,10 +3,12 @@ import { Context } from 'telegraf';
 import { MenuTemplate, MenuMiddleware, createBackMainMenuButtons } from 'telegraf-inline-menu';
 import { prisma } from '../lib/prisma';
 import { bot } from '../lib/bot';
+import { commandLimiter } from '../lib/rateLimiter';
+import { getErrorMessage } from '../lib/validators';
 
 export interface BotContext extends Context {
     match?: RegExpExecArray | undefined;
-}
+};
 
 type NeighborhoodChoice = { id: number; name: string };
 type ZoneChoice = { id: number; name: string };
@@ -14,6 +16,19 @@ type CityChoice = { id: number; name: string };
 
 // --- 1. START COMMAND ---
 bot.start(async (ctx) => {
+    const userId = ctx.from?.id;
+
+    if (!commandLimiter.isAllowed(String(userId))) {
+        const resetTime = commandLimiter.getResetTime(String(userId));
+        await ctx.reply(`⏳ Você atingiu o limite de comandos. Tente novamente em ${resetTime} segundos.`);
+        return;
+    };
+
+    botStartCommand(ctx);
+});
+
+// Bot Start
+const botStartCommand = async (ctx: Context) => {
     try {
         const chatId = String(ctx.from?.id);
         const name = ctx.from?.first_name || 'Cidadão';
@@ -31,9 +46,21 @@ bot.start(async (ctx) => {
         await ctx.reply(`Olá, ${name}! 🌊\n\nBem-vindo ao Recife-Nimbus. Eu vou te avisar em tempo real se houver risco de alagamento no seu bairro.\n\nUse /configurar para escolher sua localização.`);
 
     } catch (err) {
-        console.error("Error in bot.start:", err);
+        const errorMsg = getErrorMessage(err);
+        console.error("[BOT] Error in bot.start:", errorMsg);
+        
+        // Sending a Error message to the user.
+        try {
+            await ctx.reply("❌ Ocorreu um erro ao iniciar o bot. Por favor, tente novamente mais tarde.");
+
+        } catch (replyErr) {
+            const replyErrorMsg = getErrorMessage(replyErr);
+            console.error("[BOT] Failed to send error reply:", replyErrorMsg);
+        }
     }
-});
+};
+
+
 
 // --- 2. NEIGHBORHOOD MENU (Third Level) ---
 const neighborhoodMenu = new MenuTemplate<BotContext>(async (ctx) => {
@@ -56,7 +83,7 @@ neighborhoodMenu.select('n',
     },
     {
         columns: 2,
-        // In the new schema, the user has only 1 neighborhood (radio button)
+
         isSet: async (ctx, key) => {
             const chatId = String(ctx.from?.id);
             const user = await prisma.user.findUnique({
@@ -65,26 +92,42 @@ neighborhoodMenu.select('n',
             });
             return user?.neighborhoodId === parseInt(key);
         },
+        
         set: async (ctx, key, newState) => {
             const chatId = String(ctx.from?.id);
+
+            if (!commandLimiter.isAllowed(chatId)) {
+                await ctx.answerCbQuery('⏱️ Muitos cliques. Por favor, aguarde.');
+                return false;
+            };
+
             const neighborhoodId = parseInt(key);
 
-            if (newState) {
-                await prisma.user.update({
-                    where: { telegramChatId: chatId },
-                    data: { neighborhoodId: neighborhoodId }
-                });
-                
-                const n = await prisma.neighborhood.findUnique({ where: { id: neighborhoodId } });
-                await ctx.answerCbQuery(`✅ Bairro definido: ${n?.name}`);
-                
-            } else {
-                await prisma.user.update({
-                    where: { telegramChatId: chatId },
-                    data: { neighborhoodId: null } // Removes the link from the database
-                });
-                
-                await ctx.answerCbQuery(`❌ Monitoramento desativado`);
+            try {
+                // Activate and desactivate neighborhood monitoring
+                // by menu clickes.
+                if (newState) {
+                    await prisma.user.update({
+                        where: { telegramChatId: chatId },
+                        data: { neighborhoodId: neighborhoodId }
+                    });
+                    
+                    const n = await prisma.neighborhood.findUnique({ where: { id: neighborhoodId } });
+                    await ctx.answerCbQuery(`✅ Bairro definido: ${n?.name}`);
+                    
+                } else {
+                    await prisma.user.update({
+                        where: { telegramChatId: chatId },
+                        data: { neighborhoodId: null } // Removes the link from the database
+                    });
+                    
+                    await ctx.answerCbQuery(`❌ Monitoramento desativado`);
+                };
+
+            } catch (err) {
+                const errorMsg = getErrorMessage(err);
+                console.error("[BOT] Error in neighborhoodMenu set:", errorMsg);
+                await ctx.answerCbQuery("❌ Ocorreu um erro. Tente novamente.");
             };
 
             return true;
@@ -140,13 +183,23 @@ cityMenu.chooseIntoSubmenu('c',
 const menuMiddleware = new MenuMiddleware<BotContext>('/', cityMenu);
 bot.use(menuMiddleware.middleware());
 
-// Command shortcuts
-bot.command('configurar', (ctx) => menuMiddleware.replyToContext(ctx));
-bot.command('CadastrarBairro', (ctx) => menuMiddleware.replyToContext(ctx)); // Keeping backwards compatibility with previous code
+// Command handler for /configurar to trigger the menu, with rate limiting.
+bot.command('configurar', (ctx) => {
+    const userId = ctx.from?.id;
+
+    if (!commandLimiter.isAllowed(String(userId))) {
+        const resetTime = commandLimiter.getResetTime(String(userId));
+        ctx.reply(`⏳ Você atingiu o limite de comandos. Tente novamente em ${resetTime} segundos.`);
+        return;
+    }
+
+    menuMiddleware.replyToContext(ctx);
+    console.log(`[BOT] User:${userId} accessed the bot configuration menu.`);
+});
 
 export const startTelegramBot = () => {
     bot.launch();
-    console.log('🚀 Recife Nimbus Bot está online!');
+    console.log('[BOT] Recife Nimbus Bot está online!');
 };
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
