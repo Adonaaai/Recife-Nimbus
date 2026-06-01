@@ -2,15 +2,17 @@ import { z } from 'zod';
 
 // Comprehensive MarkdownV2 sanitization function
 // Escapes all reserved characters that could be used for injection attacks
-export function escapeMdV2(text: string): string {
-    return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+export function escapeMd(text: string): string {
+    return text.replace(/[;:\_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
 };
+
 
 export const userinputSchema = z.object({
     chatId: z.string().regex(/^\d+$/, 'Chat ID must be numeric'),
     name: z.string().min(1).max(255).trim(),
     text: z.string().max(4096).trim(),
 });
+
 
 // validate Timezone value
 export function validateTimezone(timezone: string): boolean {
@@ -23,6 +25,7 @@ export function validateTimezone(timezone: string): boolean {
         return false
     };
 };
+
 
 // sanitize JSON string for database storage, prevent injections attacks.
 export function sanitizeJsonString(data: any): string {
@@ -43,7 +46,6 @@ export const rainSensorSchema = z.object({
 
 
 // Validates APAC API river sensor response structure
-
 export const riverSensorSchema = z.object({
   attributes: z.object({
     namestation: z.string(),
@@ -58,11 +60,12 @@ export const riverSensorSchema = z.object({
 
 
 // Validates full APAC API response
-
 export const apacResponseSchema = z.object({
   features: z.array(z.any()).default([]),
   exceededTransferLimit: z.boolean().optional(),
 });
+
+
 // Type-safe error extraction from catch blocks
 export function getErrorMessage(error: unknown): string {
     if (error instanceof Error) {
