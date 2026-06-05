@@ -1,16 +1,5 @@
 # 🌩️ Recife Nimbus
 
-![Status: Near Completion](https://img.shields.io/badge/Status-Near_Completion-blue?style=for-the-badge)
-> 📡 **Project Status: Feature Complete - Final Integration Phase**
-> 
-> **Core functionality complete.** The system includes:
-> - ✅ Telegram bot with command handlers and menu flow
-> - ✅ Cron-based flood monitoring engine (Already actived in general mode in channels)
-> - ✅ Real-time and forecast data integration (Open-Meteo, APAC APIs, Marinha do Brasil data interpolation)
-> - ✅ Alert broadcast system with rate limiting
-> - ✅ PostgreSQL database with geographic hierarchy
-> 
-
 **An automated, community-driven flood alert system for the Recife Metropolitan Region (RMR).**
 
 Recife and its surrounding cities in the RMR (Jaboatão dos Guararapes, Camaragibe, São Lourenço da Mata, Moreno, Vitória de Santo Antão, Olinda, Paulista, Igarassu, and others) are built across and near to an vast mangrove ecosystem. During the rainy season, the combination of heavy precipitation and high ocean tides (above 2.0m) frequently overwhelms cities' drainage systems, causing severe urban flooding and displacing residents.
