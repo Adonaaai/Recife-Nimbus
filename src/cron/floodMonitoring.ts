@@ -11,372 +11,205 @@ import { buildMessage, buildCityChannelMessage } from "./controllers/buildMessag
 import cron from "node-cron";
 import axios from "axios";
 
-// Validated timezone string for cron scheduling.
 const timezoneValidate = validateTimezone("America/Recife");
 const timezone = timezoneValidate ? "America/Recife" : "UTC";
 
-// == Cooldown Zone guard ===================================================
-// Prevents alert spam by checking whether an alert of the same severity
-// was already sent for this zone within the cooldown window.
-// RED = 60 min cooldown | YELLOW = 180 min cooldown.
-const wasRecentlySentZone = async (
-    zoneId: number,
-    severity: Severity,
-): Promise<boolean> => {
+// Cooldown Guards
+const wasRecentlySentZone = async (zoneId: number, severity: Severity): Promise<boolean> => {
     const minutes = severity === "RED" ? 60 : 180;
-
-    // Calculating past time and formating it in a Date object.
-    const since = new Date(Date.now() - minutes * 60_000); // Example: 180 * 60_000 = 10,800,000 milliseconds - now milliseconds
-
+    const since = new Date(Date.now() - minutes * 60_000);
     const existing = await prisma.alertLog.findFirst({
-        where: {
-            zoneId,
-            severity,
-
-            triggeredAt: { gte: since }, // gte = greater than or equal (>=)
-        },
+        where: { zoneId, severity, triggeredAt: { gte: since } },
     });
-
     return existing !== null;
 };
 
-// == Cooldown City guard ===================================================
-// Prevents alert spam by checking whether an alert of the same city 
-// was already sent within the cooldown window.
-const wasRecentlySentCity = async (
-    cityId: number
-): Promise<boolean> => {
+const wasRecentlySentCity = async (cityId: number): Promise<boolean> => {
     const minutes = 60;
-
-    const since = new Date(Date.now() - minutes * 60_000); // Example: 180 * 60_000 = 10,800,000 milliseconds - now milliseconds
-
+    const since = new Date(Date.now() - minutes * 60_000);
     const existing = await prisma.cityAlertLog.findFirst({
-        where: {
-            cityId,
-            triggeredAt: { gte: since }// gte = greater than or equal (>=)
-        }
+        where: { cityId, triggeredAt: { gte: since } }
     });
-
     return existing !== null;
 };
 
-// Starts the real-time flood monitor. Runs a risk check every 15 minutes,
-// broadcasts Telegram alerts per zone, and logs every alert to the database.
-export const monitorJob = async () => {
-    
-    const APAC_RIVER_URL =
-        "https://geoportal.apac.pe.gov.br/server/rest/services/SIRH/mon_nivel_rios_pe/MapServer/0/query?where=1%3D1&outFields=*&f=json";
-    const APAC_RAIN_URL =
-        "https://geoportal.apac.pe.gov.br/server/rest/services/met_monitoramento_chuvas_pe/MapServer/0/query?where=1%3D1&outFields=*&f=json";
+// 🌟 MOTOR ISOLADO: Pode ser invocado a qualquer momento (Boot ou Cron)
+export const executeMonitoringCycle = async () => {
+    console.log(`\n[SYSTEM] ${new Date().toLocaleString()} - Iniciando ciclo de varredura de telemetria...`);
 
-    const cities = await prisma.city.findMany();
-    // == Cron: every 15 minutes, America/Recife timezone ==================
-    cron.schedule("*/15 * * * *",
-        async () => {
-            console.log(
-                `\n[SYSTEM] ${new Date().toLocaleString()} - Starting flood monitoring cycle...`,
-            );
+    const APAC_RIVER_URL = "https://geoportal.apac.pe.gov.br/server/rest/services/SIRH/mon_nivel_rios_pe/MapServer/0/query?where=1%3D1&outFields=*&f=json";
+    const APAC_RAIN_URL = "https://geoportal.apac.pe.gov.br/server/rest/services/met_monitoramento_chuvas_pe/MapServer/0/query?where=1%3D1&outFields=*&f=json";
 
-            try {
-                // == Fetch live sensor data from APAC ==========================
-                // Both requests run in parallel to reduce total wait time.
-                const [rainRes, riverRes] = await Promise.all([
-                    axios.get(APAC_RAIN_URL, { timeout: 12000 }),
-                    axios.get(APAC_RIVER_URL, { timeout: 12000 }),
-                ]);
+    try {
+        const cities = await prisma.city.findMany();
 
-                const rainSensors: RainSensor[] = rainRes.data.features ?? [];
-                const riverSensors: RiverSensor[] = riverRes.data.features ?? [];
+        // Headers adicionados para evitar bloqueios de segurança/timeout da APAC
+        const httpOptions = { 
+            timeout: 15000,
+            headers: {
+                'User-Agent': 'RecifeNimbusMonitor/1.0 (Contact: adonai@nimbus.local)'
+            }
+        };
 
-                console.log(
-                    `[APAC] Loaded ${rainSensors.length} rain sensors and ${riverSensors.length} river stations`,
+        const [rainRes, riverRes] = await Promise.all([
+            axios.get(APAC_RAIN_URL, httpOptions),
+            axios.get(APAC_RIVER_URL, httpOptions),
+        ]);
+
+        const rainSensors: RainSensor[] = rainRes.data.features ?? [];
+        const riverSensors: RiverSensor[] = riverRes.data.features ?? [];
+
+        console.log(`[APAC] Carregados ${rainSensors.length} sensores de chuva e ${riverSensors.length} estações de rios.`);
+
+        let currentTideHeight = getCurrentTideHeight();
+        let forecastTideHeight = getForecastTideHeight();
+
+        for (const city of cities) {
+            let zoneSummaries: { zoneName: string; severity: Severity; reasons: string[] }[] = [];
+
+            const zones = await prisma.zone.findMany({
+                where: { cityId: city.id },
+                include: {
+                    neighborhoods: {
+                        include: { users: true },
+                    },
+                },
+            });
+
+            for (const zone of zones) {
+                let localCurrentTide = zone.isCoastal ? currentTideHeight : 0;
+                let localForecastTide = zone.isCoastal ? forecastTideHeight : 0;
+
+                const zoneRainSensor: RainSensor[] = rainSensors.filter((sensor) => {
+                    return zone.rainSensorNames.some((dbName: string) => {
+                        const isOnline = sensor.attributes.hora_1 >= 0;
+                        return isOnline && dbName === sensor.attributes.nome;
+                    });
+                });
+
+                const zoneRiverSensors: RiverSensor[] = riverSensors.filter((sensor) => {
+                    return zone.riverBasins.some((dbName: string) => {
+                        return dbName === sensor.attributes.namebasin &&
+                               sensor.attributes.alerta_tendencia !== "MA" &&
+                               sensor.attributes.recent === "s";
+                    });
+                });
+
+                const maxRainMm = zoneRainSensor.length > 0
+                    ? Math.max(...zoneRainSensor.map((s) => s.attributes.hora_1))
+                    : 0;
+
+                const worstRiverStation = zoneRiverSensors.length > 0
+                    ? zoneRiverSensors.reduce((worst, sensor) => {
+                        const currentScore = SEVERITY_ORDER[sensor.attributes.situacao as keyof typeof SEVERITY_ORDER] ?? 0;
+                        const worstScore = SEVERITY_ORDER[worst.attributes.situacao as keyof typeof SEVERITY_ORDER] ?? 0;
+                        return currentScore > worstScore ? sensor : worst;
+                    })
+                    : null;
+
+                const riverTendencia = worstRiverStation?.attributes.tendencia ?? null;
+                const riverSituacao = worstRiverStation?.attributes.situacao ?? null;
+
+                const forecastMm = await getForecastRainMm(zone.latitude, zone.longitude);
+
+                console.log(`   📡 [${zone.name}] Chuva: ${maxRainMm}mm | Rio: ${riverSituacao ?? "Normal"} | Maré: ${localCurrentTide}m`);
+
+                const risk = calculateRisk(
+                    maxRainMm,
+                    riverSituacao,
+                    riverTendencia,
+                    localCurrentTide,
+                    forecastMm,
+                    localForecastTide
                 );
 
-                // == Tide levels — read synchronously from disk (no await needed) ===
-                let currentTideHeight = getCurrentTideHeight();
-                let forecastTideHeight = getForecastTideHeight();
+                if (risk.severity === "NONE") continue;
 
-                // == general log alerts for channel ==========
-                for (const city of cities) {
-                    // We will collect zone summaries to build a city-level alert at the end.
-                    let zoneSummaries: { zoneName: string; severity: Severity; reasons: string[] }[] = []
+                const supressed = await wasRecentlySentZone(zone.id, risk.severity);
+                if (supressed) {
+                    console.log(`   ⏸ [${zone.name}] Alerta de risco omitido pelo cooldown.`);
+                    continue;
+                }
 
-                    // == Load all zones with their neighborhoods and subscribed users ===
-                    const zones = await prisma.zone.findMany({
-                        where: { cityId: city.id },
-                        include: {
-                            neighborhoods: {
-                                include: { users: true },
-                            },
-                        },
-                    });
+                const zoneNameEscaped = escapeMd(zone.name);
+                const riskSeverity = risk.severity;
+                const riskReasonsEscaped = risk.reasons.map((reason) => escapeMd(reason));
 
-                    // == Per-zone risk evaluation and alert dispatch =====================
-                    for (const zone of zones) {
-                        
-                        // If the zone isn't coastal, we ignore tide data by forcing it to 0.
-                        const zoneIsCoastal = zone.isCoastal;
-                        if (!zoneIsCoastal) {
-                            currentTideHeight = 0;
-                            forecastTideHeight = 0;
-                        }
+                zoneSummaries.push({ zoneName: zoneNameEscaped, severity: riskSeverity, reasons: riskReasonsEscaped });
 
-                        // FILTER RAIN SENSORS FOR THIS ZONE
-                        // Keeps only sensors whose name matches the zone's watchlist
-                        // and that are currently online (hora_1 === -1 means offline).
-                        const zoneRainSensor: RainSensor[] = rainSensors.filter(
-                            (sensor) => {
-                                // looping rainSensorNames array
-                                const nameMatch = zone.rainSensorNames.some(
-                                    (dbName: string) => {
-                                        const isOnline =
-                                            sensor.attributes.hora_1 >= 0; // -1 = offline
+                const message = buildMessage(zoneNameEscaped, riskSeverity, riskReasonsEscaped);
+                const chatIds = new Set<string>();
 
-                                        // If the sensor isn't online, we force .some() don't aprove it.
-                                        if (!isOnline) {
-                                            return false;
-                                        }
+                for (const neighborhood of zone.neighborhoods) {
+                    for (const user of neighborhood.users) {
+                        if (user.isActive) chatIds.add(user.telegramChatId);
+                    }
+                }
 
-                                        // Checking if the DB name(ex: "rainSensors": "[CEMADEN] Várzea")
-                                        // match the API name     (ex: "nome": "[CEMADEN] Várzea").
-                                        return dbName === sensor.attributes.nome;
-                                    },
-                                );
-
-                                return nameMatch;
-                            },
-                        );
-
-                        // FILTER RIVER SENSORS FOR THIS ZONE
-                        // Keeps only sensors in the zone's river basins that have recent,
-                        // non-stale readings (alerta_tendencia "MA" = no data for 24 h).
-                        const zoneRiverSensors: RiverSensor[] = riverSensors.filter(
-                            (sensor) => {
-                                // looping riverBasins array
-                                const nameMatch = zone.riverBasins.some(
-                                    (dbName: string) => {
-                                        // Checking if the DB name(ex: "riverSensors": "Capibaribe")
-                                        // match the API name     (ex: "namebasin": "Capibaribe").
-                                        return (
-                                            dbName === sensor.attributes.namebasin
-                                        );
-                                    },
-                                );
-
-                                return (
-                                    nameMatch &&
-                                    sensor.attributes.alerta_tendencia !== "MA" && // exclude stale sensors
-                                    sensor.attributes.recent === "s"
-                                ); // must have a recent reading
-                            },
-                        );
-
-                        // The higher value always will be the first([0]).
-                        const maxRainMm =
-                            zoneRainSensor.length > 0
-                                ? Math.max(
-                                    ...zoneRainSensor.map(
-                                        (s) => s.attributes.hora_1,
-                                    ),
-                                )
-                                : 0;
-
-                        // == Worst river station in this zone =========================
-                        // Uses SEVERITY_ORDER as a numeric score map to find the station
-                        // with the most critical situacao (status) via reduce.
-                        const worstRiverStation =
-                            zoneRiverSensors.length > 0
-                                ? zoneRiverSensors.reduce((worst, sensor) => {
-                                    const currentScore =
-                                        SEVERITY_ORDER[
-                                        sensor.attributes
-                                            .situacao as keyof typeof SEVERITY_ORDER
-                                        ] ?? 0;
-                                    const worstScore =
-                                        SEVERITY_ORDER[
-                                        worst.attributes
-                                            .situacao as keyof typeof SEVERITY_ORDER
-                                        ] ?? 0;
-                                    return currentScore > worstScore
-                                        ? sensor
-                                        : worst;
-                                })
-                                : null;
-
-                        const riverTendencia =
-                            worstRiverStation?.attributes.tendencia ?? null; // "S"|"D"|"M" — rising/falling/stable
-
-                        const riverSituacao =
-                            worstRiverStation?.attributes.situacao ?? null; // "Normal"|"Pré-alerta"|"Alerta"|"Inundação"
-
-                        // === Forecast rain mm in next 3 hours.========================
-                        const forecastMm = await getForecastRainMm(
-                            zone.latitude,
-                            zone.longitude,
-                        );
-
-                        console.log(
-                            `[Zone] ${zone.name} → ` +
-                            `Rain: ${maxRainMm}mm | River: ${riverSituacao ?? "N/A"} | ` +
-                            `Tide: ${currentTideHeight}m | Forecast: ${forecastMm}mm | Forecast Tide: ${forecastTideHeight}m`
-                        );
-
-                        // == RISK CALCULATOR ========================================
-                        const risk = calculateRisk(
-                            maxRainMm,
-                            riverSituacao,
-                            riverTendencia,
-                            currentTideHeight,
-                            forecastMm,
-                            forecastTideHeight,
-                        );
-
-                        if (risk.severity === "NONE") {
-                            console.log(`[ZONE] ${zone.name} - ✓ No risk detected`);
-                            continue;
-                        }
-
-                        // == Cooldown check — skip if a recent alert was already sent ===
-                        const supressed = await wasRecentlySentZone(
-                            zone.id,
-                            risk.severity,
-                        );
-                        if (supressed) {
-                            console.log(
-                                `[ZONE] ${zone.name} - ⏸ Suppressed by cooldown policy`,
-                            );
-                            continue;
-                        }
-
-                        // Formating strings to build the Telegram message.
-                        const zoneNameEscaped: string = escapeMd(zone.name);
-                        const riskSeverity: Severity = risk.severity;
-                        const riskReasonsEscaped: string[] = risk.reasons.map((reason) => escapeMd(reason));
-
-                        // Sending data to zone summary array, to build a city-level alert at the end of the loop.
-                        zoneSummaries.push({ zoneName: zoneNameEscaped, severity: riskSeverity, reasons: riskReasonsEscaped });
-
-                        // == Build and broadcast the Telegram alert ==================
-                        const message = buildMessage(
-                            zoneNameEscaped,
-                            riskSeverity,
-                            riskReasonsEscaped,
-                        );
-
-                        // Collect unique chatIds across all neighborhoods in this zone.
-                        // Set deduplicates — user only gets one message even if in 2 neighborhoods.
-                        const chatIds = new Set<string>();
-
-                        for (const neighborhood of zone.neighborhoods) {
-                            for (const user of neighborhood.users) {
-                                if (user.isActive) {
-                                    chatIds.add(user.telegramChatId);
-                                }
-                            }
-                        }
-
-                        let sent = 0;
-
-                        for (const chatId of chatIds) {
-                            try {
-                                await bot.telegram.sendMessage(chatId, message, {
-                                    parse_mode: "MarkdownV2",
-                                });
-                                sent++;
-                            } catch (err) {
-                                // Per-user catch: one blocked/inactive account never stops the broadcast.
-                                const errorMsg = getErrorMessage(err);
-                                console.error(
-                                    `[TELEGRAM] Error sending to user ${chatId}: ${errorMsg}`,
-                                );
-                            }
-                        }
-
-                        // == Saving the alert to the database ==================
-                        const alertLog = await prisma.alertLog.create({
-                            data: {
-                                zoneId: zone.id,
-                                severity: risk.severity,
-                                rainLevel: risk.maxRainMm,
-                                tideLevel: risk.tideHeight,
-                                forecastRainMm: risk.forecastMm,
-                                forecastTide: risk.forecastTide,
-                                riverLevel: risk.riverSituacao,
-                                riverTendencia: risk.riverTendencia,
-                                messageSent: message,
-                            },
-                        });
-
-                        console.log(
-                            `[ZONE] ${zone.name} - 🚨 Alert [${risk.severity}] broadcasted to ${sent} user(s) | log #${alertLog.id}`,
-                        );
-
-                    }; // end for zone
-
-                    const supressed = await wasRecentlySentCity(city.id);
-
-                    if (supressed) {
-                        console.log(
-                            `[CITY] ${city.name} - ⏸ Channel alert suppressed by cooldown policy\n\n`,
-                        );
-                        continue;
-                    };
-
-                    const redZones = zoneSummaries.filter(z => z.severity === 'RED');
-
-                    // If this condition is false, it means we going to send a general alert for the channel.
-                    if (redZones.length === 0 || supressed) {
-                        console.log(
-                            `[CITY] ${city.name} - No channel alert needed (no RED zones detected)\n\n`,
-                        );
-                        continue;
-                    };
-
-                    const channelIdStr: string = `${process.env.TELEGRAM_CHANNEL_ID}`;
-                    const channelId: number = Number(channelIdStr);
-                    
-                    if (!channelIdStr) {
-                        throw new Error('TELEGRAM_CHANNEL_ID environment variable is not set.');
-                    };
-                    
-                    if (channelIdStr.trim() === "") {
-                        throw new Error('TELEGRAM_CHANNEL_ID environment variable is empty.');
-                    };
-
-                    const channelMessage = buildCityChannelMessage(city.name, zoneSummaries);
-
+                let sent = 0;
+                for (const chatId of chatIds) {
                     try {
-                        await bot.telegram.sendMessage(channelId, channelMessage, {
-                            parse_mode: "MarkdownV2",
-                        })
-
+                        await bot.telegram.sendMessage(chatId, message, { parse_mode: "MarkdownV2" });
+                        sent++;
                     } catch (err) {
-                        const errorMsg = getErrorMessage(err);
-                        console.error(`[TELEGRAM] Failed to send city alert to channel ${channelId}: ${errorMsg}`);
-                        continue;
-                    };
-                    
-                    // Preparing json data to database storage.
-                    const safeZoneSumaries = sanitizeJsonString(zoneSummaries);
+                        console.error(`[TELEGRAM] Falha ao enviar para o chat ${chatId}: ${getErrorMessage(err)}`);
+                    }
+                }
 
-                    await prisma.cityAlertLog.create({
-                        data: {
-                            cityId: city.id,
-                            alertedZones: safeZoneSumaries,
-                            hasRedAlert: true,
-                            severity: 'RED',
-                            messageSent: channelMessage,
-                        }
-                    });
+                await prisma.alertLog.create({
+                    data: {
+                        zoneId: zone.id,
+                        severity: risk.severity,
+                        rainLevel: risk.maxRainMm,
+                        tideLevel: risk.tideHeight,
+                        forecastRainMm: risk.forecastMm,
+                        forecastTide: risk.forecastTide,
+                        riverLevel: risk.riverSituacao,
+                        riverTendencia: risk.riverTendencia,
+                        messageSent: message,
+                    },
+                });
 
-                }; //end for city
-
-            } catch (err) {
-                const errorMsg = getErrorMessage(err);
-                console.error("[ERROR] Critical failure during flood monitoring cycle:", errorMsg);
+                console.log(`   🚨 [${zone.name}] Alerta [${risk.severity}] enviado para ${sent} usuários.`);
             }
-        },
-        
-        { timezone: timezone },
-    );
+
+            // Tratamento do Canal Geral da Cidade
+            const citySupressed = await wasRecentlySentCity(city.id);
+            const redZones = zoneSummaries.filter(z => z.severity === 'RED');
+
+            if (redZones.length === 0 || citySupressed) {
+                continue;
+            }
+
+            const channelIdStr = `${process.env.TELEGRAM_CHANNEL_ID}`;
+            if (!channelIdStr || channelIdStr.trim() === "") continue;
+
+            const channelMessage = buildCityChannelMessage(city.name, zoneSummaries);
+
+            try {
+                await bot.telegram.sendMessage(Number(channelIdStr), channelMessage, { parse_mode: "MarkdownV2" });
+                await prisma.cityAlertLog.create({
+                    data: {
+                        cityId: city.id,
+                        alertedZones: sanitizeJsonString(zoneSummaries),
+                        hasRedAlert: true,
+                        severity: 'RED',
+                        messageSent: channelMessage,
+                    }
+                });
+                console.log(`📢 [CANAL] Alerta geral consolidado emitido para ${city.name}.`);
+            } catch (err) {
+                console.error(`[TELEGRAM CHANNEL] Erro no envio geral: ${getErrorMessage(err)}`);
+            }
+        }
+    } catch (err) {
+        console.error("[ERROR] Falha crítica no ciclo de monitoramento:", getErrorMessage(err));
+    }
+};
+
+// == Mantém o Agendador Cron Clássico Ativo ==
+export const monitorJob = async () => {
+    cron.schedule("*/15 * * * *", async () => {
+        await executeMonitoringCycle();
+    }, { timezone });
 };
