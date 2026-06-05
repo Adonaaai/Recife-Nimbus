@@ -1,4 +1,4 @@
-import { ZoneRisk, Severity, T, TREND_LABEL } from "../types/types.ts";
+import { ZoneRisk, T, TREND_LABEL } from "../types/types.ts";
 
 // === calculateRisk return examples ===========================================================================================
 
