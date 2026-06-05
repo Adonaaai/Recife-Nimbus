@@ -15,7 +15,7 @@ function calcularDistanciaKm(lat1: number, lon1: number, lat2: number, lon2: num
 }
 
 async function main() {
-  console.log('🌊 Iniciando script de vinculo cirúrgico de bacias hidrográficas...');
+  console.log('🌊 Iniciando script de vínculo cirúrgico de bacias hidrográficas...');
 
   // 1. Carregar arquivo JSON de monitoramento de rios
   const riosPath = path.resolve(process.cwd(), 'mon_rivel_rios_pe01.json');
@@ -40,9 +40,8 @@ async function main() {
 
   console.log(`🔍 Encontradas ${zonasExistentes.length} zonas no banco de dados para analisar.`);
 
-  // Configuração de raio máximo para considerar que a zona está sob influência do rio/bacia
   const RAIO_MAX_RIOS_KM = 4.5;
-  let zonasAtualizadas = 0;
+  let zonasAtualizadasGeograficamente = 0;
 
   // 3. Processar cada zona e cruzar dados geograficamente
   for (const zona of zonasExistentes) {
@@ -54,36 +53,30 @@ async function main() {
 
       const distancia = calcularDistanciaKm(zona.latitude, zona.longitude, attr.latitude, attr.longitude);
 
-      // Se a estação de rio está dentro do raio aceitável da zona urbana
       if (distancia <= RAIO_MAX_RIOS_KM && attr.namebasin) {
         const nomeBaciaUniforme = attr.namebasin.trim();
         if (nomeBaciaUniforme) {
           baciasEncontradas.add(nomeBaciaUniforme);
         }
-        
       }
     }
 
     const baciasFinais = Array.from(baciasEncontradas);
 
-    // 4. Executar o update cirúrgico apenas no campo riverBasins da tabela Zone
     await prisma.zone.update({
       where: { id: zona.id },
-      data: {
-        riverBasins: baciasFinais
-      }
+      data: { riverBasins: baciasFinais }
     });
 
-    zonasAtualizadas++;
     if (baciasFinais.length > 0) {
-      console.log(`   ✅ [${zona.name}] vinculada às bacias: [${baciasFinais.join(', ')}]`);
-    } else {
-      console.log(`   🫙 [${zona.name}] sem rios de monitoramento próximos -> Array vazio [].`);
+      console.log(`   ✅ [${zona.name}] vinculada geometricamente às bacias: [${baciasFinais.join(', ')}]`);
+      zonasAtualizadasGeograficamente++;
     }
   }
 
-  console.log('✏️ Aplicando bacias hidrográficas manuais para zonas sem telemetria próxima...');
+  console.log('\n✏️ Aplicando bacias hidrográficas manuais (regras de negócio e fallbacks)...');
 
+  // Ajustado os termos para bater perfeitamente com os nomes reais das zonas do seu banco
   const correcoes = [
     { termo: 'Recife - RPA 1', basins: ['Capibaribe'] },
     { termo: 'Recife - RPA 2', basins: ['Capibaribe'] },
@@ -96,7 +89,7 @@ async function main() {
     { termo: 'Olinda', basins: [] },
     { termo: 'Paulista - Eixo PE-15', basins: ['Paratibe'] },
     { termo: 'Paulista - Zona Central', basins: ['Paratibe'] },
-    { termo: 'Moreno - Distrito Sede', basins: ['GL2'] }, // Mantendo 'GL2' que representa o Rio Jaboatão no seu JSON
+    { termo: 'Moreno - Distrito Sede', basins: ['GL2'] }, 
     { termo: 'Cabo de Santo Agostinho', basins: [] },
     { termo: 'Ipojuca', basins: ['Ipojuca'] },
     { termo: 'Goiana', basins: ['Goiana'] },
@@ -105,31 +98,39 @@ async function main() {
     { termo: 'Itapissuma', basins: [] },
   ];
 
+  let totalModificacoesManuais = 0;
+
   for (const item of correcoes) {
-    // Busca todas as zonas que contenham o termo no nome (ex: "Recife - RPA 1 - Centro" vai bater em "Recife - RPA 1")
     const zonasAfetadas = await prisma.zone.findMany({
       where: {
         name: {
-          contains: item.termo
+          contains: item.termo,
+          mode: 'insensitive' // Garante retrocompatibilidade se houver string com diferença de caixa
         }
       },
       select: { id: true, name: true, riverBasins: true }
     });
 
     for (const zona of zonasAfetadas) {
-      // Evita sobreescrever se a bacia correta já estiver lá de alguma forma
-      const novasBacias = Array.from(new Set([...zona.riverBasins, ...item.basins]));
+      const baciasUnicas = Array.from(new Set([...zona.riverBasins, ...item.basins]));
 
-      await prisma.zone.update({
-        where: { id: zona.id },
-        data: { riverBasins: novasBacias }
-      });
+      // ⚡ OTIMIZAÇÃO CRUCIAL: Só gasta escrita no banco se o array realmente mudou
+      const arraysSaoIguais = 
+        zona.riverBasins.length === baciasUnicas.length && 
+        zona.riverBasins.every((val) => baciasUnicas.includes(val));
 
-      console.log(`   ⚡ [${zona.name}] forçado manualmente para: [${novasBacias.join(', ')}]`);
+      if (!arraysSaoIguais) {
+        await prisma.zone.update({
+          where: { id: zona.id },
+          data: { riverBasins: baciasUnicas }
+        });
+        console.log(`   ⚡ [${zona.name}] atualizado via fallback manual para: [${baciasUnicas.join(', ')}]`);
+        totalModificacoesManuais++;
+      }
     }
   }
 
-  console.log(`\n✨ Sucesso! ${zonasAtualizadas} zonas tiveram seus mapeamentos de bacias atualizados com precisão.`);
+  console.log(`\n✨ Sucesso! Script finalizado. Mapeamento geográfico ativo e fallbacks aplicados sem redundância.`);
 }
 
 (async () => {
