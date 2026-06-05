@@ -1,14 +1,13 @@
+import "dotenv/config";
 import { PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { env } from '../config/env.ts';
 
 const connectionString = `${process.env.DATABASE_URL}`;
 
 if (!connectionString) {
     throw new Error(
         'DATABASE_URL environment variable is not set. ' +
-        'Please add it to your .env file with your PostgreSQL connection string. ' +
-        'Example: postgresql://user:password@localhost:5432/recife_nimbus'
+        'Please add it to your .env file with your PostgreSQL connection string. '
     );
 }
 
