@@ -1,70 +1,65 @@
-# 🌩️ Recife Nimbus
+# Recife Nimbus
 
-**An automated, community-driven flood alert system for the Recife Metropolitan Region (RMR).**
+**An automated flood alert system for the Recife Metropolitan Region (RMR).**
 
-Recife and its surrounding cities in the RMR (Jaboatão dos Guararapes, Camaragibe, São Lourenço da Mata, Moreno, Vitória de Santo Antão, Olinda, Paulista, Igarassu, and others) are built across and near to an vast mangrove ecosystem. During the rainy season, the combination of heavy precipitation and high ocean tides (above 2.0m) frequently overwhelms cities' drainage systems, causing severe urban flooding and displacing residents.
-
-**Recife Nimbus** is a lightweight, hyper-local early warning system. It monitors weather and river sensor APIs across all RMR cities, cross-references them with specific zone coordinates, and automatically dispatches warnings to a public Telegram channel and subscribed users before the streets flood.
+Recife and its surrounding cities are built across a vast mangrove ecosystem. During the rainy season, the combination of heavy precipitation and high ocean tides (above 2.0m) frequently overwhelms drainage systems, causing severe urban flooding. **Recife Nimbus** monitors weather and river sensor APIs across all RMR cities, cross-references them with zone coordinates, and dispatches warnings to a public Telegram channel and subscribed users before the streets flood.
 
 ---
 
-## ✨ Core Features
+## Features
 
-### ⚙️ The Automated Monitoring Engine
-* **Smart Multi-City Polling:** Cron job evaluates 3-hour forecasts for heavy rain intersecting with high tides across all Recife Metropolitan Region cities.
-* **Hyper-Local Checking:** Iterates through PostgreSQL database organized by City → Zone → Neighborhood hierarchy.
-* **Real-Time Data Integration:** Monitors APAC (Agência Pernambucana de Águas e Clima) rain sensors and river basin APIs for real-time conditions.
-* **Tide Integration:** Cross-references ocean tide predictions with oficial data precipitation.
-* **Anti-Spam Broadcasting:** Uses rate-limiting queues to prevent Telegram bot API throttling.
+### Automated Monitoring Engine
+- **Multi-City Polling:** Evaluates 3-hour rain forecasts intersecting with tide levels across all RMR cities every 15 minutes.
+- **Hyper-Local Evaluation:** Iterates through a PostgreSQL hierarchy of City → Zone → Neighborhood.
+- **Real-Time Data Integration:** Monitors APAC (Agência Pernambucana de Águas e Clima) rain sensors and river basin stations.
+- **Tide Cross-Reference:** Interpolates DHN tide table data for coastal zones; inland zones receive zero tidal weight.
+- **Anti-Spam Cooldowns:** Zone alerts: RED = 60 min, YELLOW = 180 min. City channel alerts: 60 min.
 
-### 📡 Telegram Channel Monitoring (Automated Broadcast)
-* **Public Alert Channel:** Automatically broadcasts critical flood warnings to a dedicated public Telegram channel when risk thresholds are met.
-* **Alert Severity Levels:** 
-  - 🟨 **YELLOW** (Predictive): 3-hour forecast shows dangerous rain + high tide combination
-  - 🔴 **RED** (Real-Time Critical): Real-time APAC data confirms flooding conditions now
-* **Message Templates:** Location-aware alerts include neighborhood name, rain forecast (mm), tide height (m), and river status.
+### Telegram Alert Broadcasts
+- **Public Channel:** Broadcasts consolidated RED alerts to a dedicated public Telegram channel per city.
+- **Direct Messages:** Sends zone-level alerts directly to subscribed users via DM.
+- **Severity Levels:**
+  - **YELLOW** (Predictive): Forecast indicates dangerous rain or tide conditions within 3 hours.
+  - **RED** (Real-Time Critical): APAC sensors confirm active flooding conditions.
 
-### 🌍 Multi-City RMR Support
-The system supports all cities in the Recife Metropolitan Region:
-- Recife (central monitoring hub)
-- Jaboatão dos Guararapes
-- Camaragibe
-- São Lourenço da Mata
-- Moreno
-- Vitória de Santo Antão
-- Olinda
-- Paulista
-- Igarassu
-- Abreu e Lima,
-- Araçoiaba,
-- Goiana,
-- Ipojuca,
-- Itapissuma,
-- Moreno
-- *Additional RMR cities can be added via database seeding*
+### Multi-City RMR Coverage
+The system supports the full Recife Metropolitan Region:
 
-Each city contains configurable zones (Zona Norte, Zona Sul, etc.) and neighborhoods with precise monitoring coordinates.
+| City | City |
+|---|---|
+| Recife | Olinda |
+| Jaboatão dos Guararapes | Paulista |
+| Camaragibe | Igarassu |
+| São Lourenço da Mata | Abreu e Lima |
+| Moreno | Araçoiaba |
+| Goiana | Ipojuca |
+| Itapissuma | Ilha de Itamaracá |
+| Cabo de Santo Agostinho | — |
+
+Additional cities can be added via database seeding without code changes.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-* **Language:** [TypeScript](https://www.typescriptlang.org/) / Node.js
-* **Database:** PostgreSQL (Recommended: [Supabase](https://supabase.com/))
-* **ORM:** [Prisma](https://www.prisma.io/)
-* **Job Scheduling:** [node-cron](https://github.com/kelektiv/node-cron)
-* **Telegram:** [Telegraf](https://github.com/telegraf/telegraf) + [telegraf-inline-menu](https://github.com/EdJoPaTo/telegraf-inline-menu)
-* **External APIs:**
-  - [Open-Meteo](https://open-meteo.com/) - Weather & Marine Data (Free, No Auth)
-  - [APAC (Agência Pernambucana de Águas e Clima)](https://www.apac.pe.gov.br/) - Real-Time Rain Sensors & River Levels
+| Layer | Technology |
+|---|---|
+| Language | TypeScript / Node.js |
+| Database | PostgreSQL (recommended: Supabase) |
+| ORM | Prisma |
+| Job Scheduling | node-cron |
+| Telegram | Telegraf + telegraf-inline-menu |
+| Rain Forecast | Open-Meteo API (free, no auth) |
+| Real-Time Sensors | APAC ArcGIS FeatureServer |
 
 ---
 
-## 🗄️ Database Schema Overview
+## Database Schema
 
-The database is managed via Prisma with a geographic hierarchy built for scalable multi-city support across the Recife Metropolitan Region.
+The database uses a geographic hierarchy designed for scalable multi-city support.
 
-### **Geographic Hierarchy**
+### Geographic Hierarchy
+
 ```
 City
 ├── Zone (coordinates, API sensor keys, coastal flag)
@@ -73,7 +68,7 @@ City
 └── CityAlertLog (consolidated per-city channel alerts)
 ```
 
-### **Core Models**
+### Core Models
 
 | Model | Purpose | Key Fields |
 |---|---|---|
@@ -84,185 +79,205 @@ City
 | **AlertLog** | Per-zone alert audit trail | `zoneId`, `rainLevel`, `tideLevel`, `forecastRainMm`, `forecastTide`, `riverLevel`, `riverTendencia`, `severity`, `messageSent`, `triggeredAt` |
 | **CityAlertLog** | Consolidated city-level channel alert | `cityId`, `alertedZones`, `hasRedAlert`, `severity`, `messageSent`, `triggeredAt` |
 
-### **Data Relationships**
+### Data Relationships
+
 - **1 City : N Zones** — Each city is divided into monitoring zones
 - **1 Zone : N Neighborhoods** — Each zone covers multiple neighborhoods
 - **1 Neighborhood : N Users** — Multiple users can subscribe to the same neighborhood
-- **1 Zone : N AlertLogs** — Full alert history per zone (with cooldown control)
+- **1 Zone : N AlertLogs** — Full alert history per zone with cooldown enforcement
 - **1 City : N CityAlertLogs** — Consolidated channel alerts per city
 
-### **Notable Zone Fields**
-- `isCoastal` — when `true`, the zone receives real tide data from `tides2026.json`; inland zones always receive `tideHeight: 0` to avoid false compound flood alerts
-- `rainSensorNames[]` — matched against APAC pluviometer `nome` field to filter sensors for this zone
-- `riverBasins[]` — matched against APAC fluviometer `namebasin` field to filter river stations
+### Notable Zone Fields
+
+- `isCoastal` — when `true`, the zone receives interpolated tide data from `tides2026.json`; inland zones receive `tideHeight: 0` to prevent false compound flood alerts
+- `rainSensorNames[]` — matched against APAC pluviometer `nome` field to filter sensors per zone
+- `riverBasins[]` — matched against APAC fluviometer `namebasin` field to filter river stations per zone
 
 ---
 
-## 📡 Alert Broadcast System
+## Alert System
 
 ### How Alerts Flow
 
 ```
-1. Cron Job Triggers (every 15 min)
-   ↓
-2. Fetch ALL sensor data once (shared across all zones)
-   - APAC Pluviometers  → real-time rain (hora_1 mm/h)
-   - APAC Fluviometers  → river levels + situacao + tendencia
-   - DHN tides2026.json → interpolated tide height now + in 3h
-   ↓
-3. For each City → For each Zone:
+1. Cron job triggers (every 15 minutes)
+   |
+2. Fetch all sensor data once (shared across zones)
+   - APAC Pluviometers   real-time rain (hora_1 mm/h)
+   - APAC Fluviometers   river levels + situacao + tendencia
+   - DHN tides2026.json  interpolated tide height now and in 3 hours
+   |
+3. For each City, for each Zone:
    - Filter APAC sensors by zone.rainSensorNames and zone.riverBasins
    - Fetch Open-Meteo forecast for zone coordinates (next 3 hours)
-   - If zone.isCoastal = false → tide forced to 0m (no tidal influence)
-   ↓
-4. Risk Calculator (calculateRisk):
+   - If zone.isCoastal = false, tide is forced to 0m
+   |
+4. Risk calculator (calculateRisk):
 
-   🚨 RED — any one of:
-   - Real-time rain ≥ 30mm/h
-   - River = "Alerta" or "Inundação"
-   - Current tide ≥ 2.5m
-   - Rain ≥ 15mm/h AND tide ≥ 2.0m        (compound — current)
-   - Forecast ≥ 15mm AND tide ≥ 2.0m (3h)  (compound — predictive)
+   RED — any one condition triggers:
+   - Real-time rain >= 30mm/h
+   - River status = "Alerta" or "Inundacao"
+   - Current tide >= 2.5m
+   - Rain >= 15mm/h AND tide >= 2.0m         (compound, current)
+   - Forecast >= 15mm AND tide >= 2.0m (3h)  (compound, predictive)
 
-   🟡 YELLOW — any one of:
-   - Real-time rain ≥ 15mm/h
-   - River = "Pré-alerta"
-   - Forecast rain ≥ 10mm (next 3h)
-   - Forecast tide ≥ 2.5m (next 3h)
-   - High tide ≥ 2.0m — context only, never triggers alone
-   ↓
-5. Zone Broadcast (if risk ≠ NONE and cooldown passed):
-   - RED cooldown:    60 min
-   - YELLOW cooldown: 180 min
-   - DM sent to every isActive user subscribed to that zone
+   YELLOW — any one condition triggers:
+   - Real-time rain >= 15mm/h
+   - River status = "Pre-alerta"
+   - Forecast rain >= 10mm (next 3h)
+   - Forecast tide >= 2.5m (next 3h)
+   - High tide >= 2.0m  (context only, never triggers alone)
+   |
+5. Zone broadcast (if severity != NONE and cooldown has passed):
+   - RED cooldown:    60 minutes
+   - YELLOW cooldown: 180 minutes
+   - Direct message sent to every active user subscribed to the zone
    - Alert saved to AlertLog
-   ↓
-6. City Channel Broadcast (RED zones only):
+   |
+6. City channel broadcast (RED zones only):
    - Consolidates all RED zones of the city into one message
-   - Sends to TELEGRAM_CHANNEL_ID
-   - City cooldown: 60 min
+   - Sent to TELEGRAM_CHANNEL_ID
+   - City cooldown: 60 minutes
    - Saved to CityAlertLog
 ```
 
----
+### Compound Rule
 
-## 🔧 Architecture Details
-
-### Cron Job (`src/cron/floodMonitoring.ts`)
-- Runs on configurable schedule (default: every 15 minutes)
-- Iterates through all zones across all cities
-- Calls external APIs and calculates risk
-- Broadcasts alerts to Telegram channel + individual users
-
-### Controller Chain
-1. **getForecastRainMm** - Open-Meteo API for predicted rainfall
-2. **getCurrentTideHeight** - Real-time tide data
-3. **getForecastTideHeight** - Tide forecast (3 hours)
-4. **calculateRisk** - Combines inputs, determines alert severity
-5. **buildMessage** - Formats alert text with emojis and details
+The most important rule in the system. In Recife, high tide physically blocks the river mouths, preventing drainage from reaching the ocean. As a result, 15mm/h of rain combined with a 2.0m tide causes the same flooding as 40mm/h on a low-tide day. This rule applies both to current conditions and to the 3-hour forecast.
 
 ---
 
-## 🛡️ Monitoring & Observability
-
-### AlertLog Table
-Every alert broadcast is logged with:
-- Zone ID & timestamp
-- Real-time conditions (rain, tide, river status)
-- Forecast data at time of alert
-- Exact message sent (for audit trail)
-- Severity level (YELLOW / RED)
-
-### Telegram Channel
-- General city-wide broadcast alert logs with severity RED
-
-# View recent alerts
-SELECT * FROM "AlertLog" ORDER BY "triggeredAt" DESC LIMIT 10;
-
-# View user subscriptions
-SELECT COUNT(*) as active_users FROM "User" WHERE "isActive" = true;
-
----
-
-
-## 🧪 Development
+## Architecture
 
 ### Project Structure
+
 ```
 src/
-├── index.ts                         # Entry point
+├── index.ts                          Entry point
 ├── lib/
-│   ├── prisma.ts                    # Prisma client singleton
-│   ├── bot.ts                       # Telegraf bot instance
-│   ├── rateLimiter.ts               # Bot rate limiter
-│   └── validators.ts                # Security validators
+│   ├── prisma.ts                     Prisma client singleton
+│   ├── bot.ts                        Telegraf bot instance
+│   ├── rateLimiter.ts                Bot rate limiter
+│   └── validators.ts                 Input sanitization and security helpers
 ├── bot/
-│   └── telegramBot.ts               # Bot command handlers & menus
+│   └── telegramBot.ts                Bot command handlers and inline menus
 ├── config/
-│   ├── env.ts                       # Environment variable helpers
-│   ├── tides2026.json               # DHN tide table (Porto do Recife)
-│   └── neighborhoods-official.json  # Neighborhoods reference data
-├── cron/
-│   ├── floodMonitoring.ts           # Main cron job (runs every 15 min)
-│   ├── types/
-│   │   └── types.ts                 # Interfaces, thresholds & constants
-│   └── controllers/
-│       ├── calculateRisk.ts         # Risk decision engine (pure function)
-│       ├── buildMessage.ts          # Telegram message formatter
-│       ├── getCurrentTideHeight.ts  # Interpolates tide height right now
-│       ├── getForecastTideHeight.ts # Interpolates tide height in 3 hours
-│       └── getForecastRainMm.ts     # Open-Meteo 3h rain forecast
+│   ├── env.ts                        Environment variable helpers
+│   ├── tides2026.json                DHN tide table (Porto do Recife)
+│   └── neighborhoods-official.json  Neighborhoods reference data
+└── cron/
+    ├── floodMonitoring.ts            Main cron job (runs every 15 minutes)
+    ├── types/
+    │   └── types.ts                  Interfaces, thresholds and constants
+    └── controllers/
+        ├── calculateRisk.ts          Risk decision engine (pure function)
+        ├── buildMessage.ts           Telegram message formatter
+        ├── getCurrentTideHeight.ts   Interpolates current tide height
+        ├── getForecastTideHeight.ts  Interpolates tide height in 3 hours
+        └── getForecastRainMm.ts      Open-Meteo 3-hour rain forecast
 
 prisma/
-├── schema.prisma                    # Database models
-├── seed.ts                          # Seeds RMR cities, zones & neighborhoods
-└── migrations/                      # Auto-generated migration history
+├── schema.prisma                     Database models
+├── seed.ts                           Seeds RMR cities, zones and neighborhoods
+└── migrations/                       Auto-generated migration history
 ```
+
+### Controller Chain
+
+| Order | Controller | Responsibility |
+|---|---|---|
+| 1 | `getForecastRainMm` | Calls Open-Meteo for predicted rainfall per zone |
+| 2 | `getCurrentTideHeight` | Interpolates current tide from DHN JSON |
+| 3 | `getForecastTideHeight` | Interpolates tide height 3 hours from now |
+| 4 | `calculateRisk` | Combines all inputs, returns severity and reasons |
+| 5 | `buildMessage` | Formats the Telegram alert string |
+
 ---
 
-## 🤝 Contributing
+## Observability
 
-Contributions welcome! Areas for enhancement:
-- [ ] Machine learning for alert accuracy
-- [ ] Mobile app (React Native)
-- [ ] WhatsApp integration
-- [ ] SMS alerts for critical warnings
+### AlertLog Table
+
+Every alert is logged with zone ID, timestamp, real-time conditions at the moment of dispatch (rain, tide, river status, forecast values), the exact message text sent, and severity level. This provides a full audit trail for post-event analysis.
+
+```sql
+-- View recent alerts
+SELECT * FROM "AlertLog" ORDER BY "triggeredAt" DESC LIMIT 10;
+
+-- View active subscribers
+SELECT COUNT(*) AS active_users FROM "User" WHERE "isActive" = true;
+```
+
+### CityAlertLog Table
+
+Tracks consolidated city-level RED alerts sent to the public channel, including which zones triggered and whether any zone reached RED severity.
+
+---
+
+## Development
+
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL (local via Docker or hosted via Supabase)
+- Telegram bot token (via BotFather)
+- Telegram channel ID
+
+### Environment Variables
+
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/recife_nimbus
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_CHANNEL_ID=your_channel_id
+```
+
+### Setup
+
+```bash
+git clone https://github.com/Adonaaai/Recife-Nimbus
+cd Recife-Nimbus
+npm install
+npx prisma migrate dev
+npx prisma db seed
+npm run dev
+```
+
+---
+
+## Contributing
+
+Contributions are welcome. Potential areas for enhancement:
+
 - [ ] Historical flood pattern analysis
-- [ ] Push notifications via PWA
+- [ ] PWA push notifications
+- [ ] WhatsApp integration
+- [ ] SMS fallback for critical alerts
+- [ ] Predictive ML model for alert accuracy
 
 ### Pull Request Process
+
 1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push branch: `git push origin feature/amazing-feature`
-5. Open Pull Request with description
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'Add your feature'`
+4. Push the branch: `git push origin feature/your-feature`
+5. Open a pull request with a clear description of the change
 
 ---
 
-## 📜 License
+## Acknowledgments
 
-This project is licensed under the ISC License. See [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **APAC (Agência Pernambucana de Águas e Clima)** - Real-time hydrological data
-- **Open-Meteo** - Free weather & marine APIs
-- **Telegram Bot API** - Community alert delivery
-- **Recife & RMR residents** - Inspiration and use case
+- **APAC (Agência Pernambucana de Águas e Clima)** — Real-time hydrological sensor data
+- **DHN (Diretoria de Hidrografia e Navegação)** — Official tide table for Porto do Recife
+- **Open-Meteo** — Free, open-source weather forecast API
+- **Telegram Bot API** — Alert delivery infrastructure
 
 ---
 
-## 📞 Contact & Support
+## License
 
-For issues, questions, or suggestions:
-- Open an [GitHub Issue](../../issues)
-- Check existing [GitHub Discussions](../../discussions)
-
-**Current Maintainers:** Adonai Artur dev
+ISC License. See [LICENSE](LICENSE) for details.
 
 ---
 
-*Last Updated: 2026-06-03*  
-*Status: Feature Complete - Production Ready (Cron monitoring optional)*
+**Maintainer:** Adonai Artur  
+**Last updated:** June 2026
