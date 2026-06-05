@@ -71,7 +71,7 @@ export const monitorJob = async () => {
 
     const cities = await prisma.city.findMany();
     // == Cron: every 15 minutes, America/Recife timezone ==================
-    cron.schedule("*/1 * * * *",
+    cron.schedule("*/15 * * * *",
         async () => {
             console.log(
                 `\n[SYSTEM] ${new Date().toLocaleString()} - Starting flood monitoring cycle...`,
@@ -285,16 +285,10 @@ export const monitorJob = async () => {
                                 sent++;
                             } catch (err) {
                                 // Per-user catch: one blocked/inactive account never stops the broadcast.
-                                if (err instanceof Error) {
-                                    console.error(
-                                        `[TELEGRAM] Error sending to user ${chatId}: ${err.message}`,
-                                    );
-                                } else {
-                                    console.error(
-                                        `[TELEGRAM] Error sending to user ${chatId}:`,
-                                        err,
-                                    );
-                                }
+                                const errorMsg = getErrorMessage(err);
+                                console.error(
+                                    `[TELEGRAM] Error sending to user ${chatId}: ${errorMsg}`,
+                                );
                             }
                         }
 
@@ -357,7 +351,8 @@ export const monitorJob = async () => {
                         })
 
                     } catch (err) {
-                        console.error(`[TELEGRAM] Failed to send city alert to channel ${channelId}:`, err);
+                        const errorMsg = getErrorMessage(err);
+                        console.error(`[TELEGRAM] Failed to send city alert to channel ${channelId}: ${errorMsg}`);
                         continue;
                     };
                     
@@ -377,7 +372,8 @@ export const monitorJob = async () => {
                 }; //end for city
 
             } catch (err) {
-                console.error("[ERROR] Critical failure during flood monitoring cycle:", err);
+                const errorMsg = getErrorMessage(err);
+                console.error("[ERROR] Critical failure during flood monitoring cycle:", errorMsg);
             }
         },
         
