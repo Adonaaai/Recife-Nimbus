@@ -176,12 +176,26 @@ cityMenu.chooseIntoSubmenu('c',
         return choices;
     }, 
     zoneMenu, 
-    { columns: 1 }
+    {
+        columns: 2,
+        maxRows: 15
+    }
 );
 
 // --- 5. MIDDLEWARE AND INITIALIZATION ---
 const menuMiddleware = new MenuMiddleware<BotContext>('/', cityMenu);
 bot.use(menuMiddleware.middleware());
+
+bot.command('ajuda', (ctx) => {
+    const userId = ctx.from?.id;
+
+    if (!commandLimiter.isAllowed(String(userId))) {
+        const resetTime = commandLimiter.getResetTime(String(userId));
+        ctx.reply(`⏳ Você atingiu o limite de comandos. Tente novamente em ${resetTime} segundos.`);
+        return;
+    };
+    ctx.reply('📌 Comandos disponíveis:\n\n/start - Iniciar o bot e registrar seu chat\n/configurar - Escolher o seu bairro para ser monitorado\n/ajuda - Mostrar esta mensagem de ajuda');
+})
 
 // Command handler for /configurar to trigger the menu, with rate limiting.
 bot.command('configurar', (ctx) => {
