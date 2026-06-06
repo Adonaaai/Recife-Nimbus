@@ -209,7 +209,7 @@ export const executeMonitoringCycle = async () => {
 
 // == Mantém o Agendador Cron Clássico Ativo ==
 export const monitorJob = async () => {
-    cron.schedule("*/15 * * * *", async () => {
+    cron.schedule("*/30 * * * *", async () => {
         await executeMonitoringCycle();
     }, { timezone });
 };
