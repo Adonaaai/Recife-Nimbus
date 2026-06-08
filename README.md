@@ -4,7 +4,22 @@
 
 Recife and its surrounding cities are built across a vast mangrove ecosystem. During the rainy season, the combination of heavy precipitation and high ocean tides (above 2.0m) frequently overwhelms drainage systems, causing severe urban flooding. **Recife Nimbus** monitors weather and river sensor APIs across all RMR cities, cross-references them with zone coordinates, and dispatches warnings to a public Telegram channel and subscribed users before the streets flood.
 
+## Links & Community
+
+| Platform | Link | Description |
+|---|---|---|
+| 📢 Telegram Channel | [Recife Nimbus \| Alertas Oficiais](https://t.me/+GzmJKR2chEs1ZTlh) | Public city-wide RED alerts |
+| 🤖 Telegram Bot | [@Recife\_Nimbus\_BOT](https://web.telegram.org/k/#@Recife_Nimbus_BOT) | Personal zone alerts via DM |
+| 📸 Instagram | [@recifenimbus](https://www.instagram.com/recifenimbus/) | Community updates and news |
+
 ---
+
+## Hosting
+
+| Service | Provider | Plan |
+|---|---|---|
+| Bot & Cron Engine | [Render](https://render.com) | Free tier |
+| PostgreSQL Database | [Supabase](https://supabase.com) | Free tier |
 
 ## Features
 
@@ -48,6 +63,8 @@ Additional cities can be added via database seeding without code changes.
 | Database | PostgreSQL (recommended: Supabase) |
 | ORM | Prisma |
 | Job Scheduling | node-cron |
+| Hosting | Render (bot) + Supabase (DB) |
+| Tide Data | DHN tides2026.json (Porto do Recife) |
 | Telegram | Telegraf + telegraf-inline-menu |
 | Rain Forecast | Open-Meteo API (free, no auth) |
 | Real-Time Sensors | APAC ArcGIS FeatureServer |
