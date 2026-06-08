@@ -8,9 +8,9 @@ Recife and its surrounding cities are built across a vast mangrove ecosystem. Du
 
 | Platform | Link | Description |
 |---|---|---|
-| 📢 Telegram Channel | [Recife Nimbus \| Alertas Oficiais](https://t.me/+GzmJKR2chEs1ZTlh) | Public city-wide RED alerts |
-| 🤖 Telegram Bot | [@Recife\_Nimbus\_BOT](https://web.telegram.org/k/#@Recife_Nimbus_BOT) | Personal zone alerts via DM |
-| 📸 Instagram | [@recifenimbus](https://www.instagram.com/recifenimbus/) | Community updates and news |
+| ![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white) | [Recife Nimbus \| Alertas Oficiais](https://t.me/+GzmJKR2chEs1ZTlh) | Public city-wide RED alerts |
+| ![Bot](https://img.shields.io/badge/Telegram_Bot-2CA5E0?style=flat&logo=telegram&logoColor=white) | [@Recife\_Nimbus\_BOT](https://web.telegram.org/k/#@Recife_Nimbus_BOT) | Personal zone alerts via DM |
+| ![Instagram](https://img.shields.io/badge/Instagram-E4405F?style=flat&logo=instagram&logoColor=white) | [@recifenimbus](https://www.instagram.com/recifenimbus/) | Community updates and news |
 
 ---
 
