@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const getForecastRainMm = async(lat: number, lon: number): Promise<number> => {
+export const getForecastRainMmFunction = async (lat: number, lon: number): Promise<number> => {
     try {
         const url =
             `https://api.open-meteo.com/v1/forecast` +
@@ -36,4 +36,9 @@ export const getForecastRainMm = async(lat: number, lon: number): Promise<number
         console.error(`[Rain] Error getting forecast rain mm: ${err}`);
         return 0;
     };
+};
+
+export const getForecastRainMm = async (lat: number, lon: number): Promise<number> => {
+    await new Promise(res => setTimeout(res, 2000));
+    return getForecastRainMmFunction(lat, lon);
 };
