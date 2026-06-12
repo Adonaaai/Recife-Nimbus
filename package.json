@@ -16,6 +16,7 @@
     "axios": "1.14.0",
     "dotenv": "17.4.1",
     "node-cron": "4.2.1",
+    "p-limit": "^7.3.0",
     "pg": "8.20.0",
     "telegraf": "4.16.3",
     "telegraf-inline-menu": "6.3.0",

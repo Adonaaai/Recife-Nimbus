@@ -1,4 +1,5 @@
 import "dotenv/config";
+import pLimit from 'p-limit'
 import { escapeMd, validateTimezone, sanitizeJsonString, getErrorMessage } from '../lib/validators';
 import { RainSensor, RiverSensor, Severity, SEVERITY_ORDER } from "./types/types.ts";
 import { getForecastTideHeight } from "./controllers/getForecastTideHeight.ts";
@@ -10,6 +11,9 @@ import { prisma } from "../lib/prisma.ts";
 import { buildMessage, buildCityChannelMessage } from "./controllers/buildMessage";
 import cron from "node-cron";
 import axios from "axios";
+
+// One request per time
+const plimit = pLimit(1);
 
 const timezoneValidate = validateTimezone("America/Recife");
 const timezone = timezoneValidate ? "America/Recife" : "UTC";
@@ -110,7 +114,7 @@ export const executeMonitoringCycle = async () => {
                 const riverTendencia = worstRiverStation?.attributes.tendencia ?? null;
                 const riverSituacao = worstRiverStation?.attributes.situacao ?? null;
 
-                const forecastMm = await getForecastRainMm(zone.latitude, zone.longitude);
+                const forecastMm = await plimit(() => getForecastRainMm(zone.latitude, zone.longitude));
 
                 console.log(`   📡 [${zone.name}] Chuva: ${maxRainMm}mm | Rio: ${riverSituacao ?? "Normal"} | Maré: ${localCurrentTide}m`);
 

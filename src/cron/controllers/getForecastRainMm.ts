@@ -39,6 +39,6 @@ export const getForecastRainMmFunction = async (lat: number, lon: number): Promi
 };
 
 export const getForecastRainMm = async (lat: number, lon: number): Promise<number> => {
-    await new Promise(res => setTimeout(res, 2000));
+    await new Promise(res => setTimeout(res, 200));
     return getForecastRainMmFunction(lat, lon);
 };
