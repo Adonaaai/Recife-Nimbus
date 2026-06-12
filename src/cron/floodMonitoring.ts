@@ -185,7 +185,7 @@ export const executeMonitoringCycle = async () => {
                 continue;
             }
 
-            const channelIdStr = `${process.env.TELEGRAM_CHANNEL_ID}`;
+            const channelIdStr = `${process.env.TELEGRAM_ALERT_CHANNEL_ID}`;
             if (!channelIdStr || channelIdStr.trim() === "") continue;
 
             const channelMessage = buildCityChannelMessage(city.name, zoneSummaries);
@@ -211,7 +211,6 @@ export const executeMonitoringCycle = async () => {
     }
 };
 
-// == Mantém o Agendador Cron Clássico Ativo ==
 export const monitorJob = async () => {
     cron.schedule("*/30 * * * *", async () => {
         await executeMonitoringCycle();
