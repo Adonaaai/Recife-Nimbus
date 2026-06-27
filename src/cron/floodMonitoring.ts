@@ -185,13 +185,19 @@ export const executeMonitoringCycle = async () => {
                 continue;
             }
 
-            const channelIdStr = `${process.env.TELEGRAM_ALERT_CHANNEL_ID}`;
-            if (!channelIdStr || channelIdStr.trim() === "") continue;
+            const channelId = process.env.TELEGRAM_ALERT_CHANNEL_ID;
 
-            const channelMessage = buildCityChannelMessage(city.name, zoneSummaries);
+            if (!channelId || channelId.trim() === "" || channelId === "undefined") {
+                console.error(`⚠️ [CANAL] TELEGRAM_ALERT_CHANNEL_ID inválido ou não carregado.`);
+                continue;
+            };
+
+            const cityNameEscaped = escapeMd(city.name);
+            const channelMessage = buildCityChannelMessage(cityNameEscaped, zoneSummaries);
 
             try {
-                await bot.telegram.sendMessage(Number(channelIdStr), channelMessage, { parse_mode: "MarkdownV2" });
+                await bot.telegram.sendMessage(channelId.trim(), channelMessage, { parse_mode: "MarkdownV2" });
+
                 await prisma.cityAlertLog.create({
                     data: {
                         cityId: city.id,
@@ -202,6 +208,7 @@ export const executeMonitoringCycle = async () => {
                     }
                 });
                 console.log(`📢 [CANAL] Alerta geral consolidado emitido para ${city.name}.`);
+
             } catch (err) {
                 console.error(`[TELEGRAM CHANNEL] Erro no envio geral: ${getErrorMessage(err)}`);
             }
