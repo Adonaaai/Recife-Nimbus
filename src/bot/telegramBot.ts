@@ -43,7 +43,7 @@ const botStartCommand = async (ctx: Context) => {
             }
         });
 
-        await ctx.reply(`Olá, ${name}! 🌊\n\nBem-vindo ao Recife-Nimbus. Eu vou te avisar em tempo real se houver risco de alagamento no seu bairro.\n\n Acesse Também o grupo da nossa comunidade: https://t.me/+F4VjD4FdeTxjN2Mx\nPara compartilhamentos das ruas em tempo real durante as chuvas\n\nEntre no nosso canal de alertas oficiais: https://t.me/+GzmJKR2chEs1ZTlh\nPara ficar por dentro dos avisos oficiais da APAC e outros orgãos da RMR\n\nUse /configurar para escolher sua localização.`);
+        await ctx.reply(`Olá, ${name}! 🌊\n\nBem-vindo ao Recife-Nimbus BOT. Eu vou te avisar em tempo real se houver risco de alagamento no seu bairro.\n\nAcesse o grupo da nossa comunidade: https://t.me/+F4VjD4FdeTxjN2Mx \nPara compartilhamentos das ruas em tempo real durante as chuvas.\n\nEntre no nosso canal de alertas oficiais: https://t.me/+GzmJKR2chEs1ZTlh\nPara ficar por dentro dos avisos oficiais da APAC e outros orgãos da RMR.\n\nUse /configurar para escolher sua localização.`);
 
     } catch (err) {
         const errorMsg = getErrorMessage(err);
@@ -141,7 +141,7 @@ neighborhoodMenu.manualRow(createBackMainMenuButtons('⬅️ Voltar para Regiõe
 const zoneMenu = new MenuTemplate<BotContext>(async (ctx) => {
     const cityId = parseInt(ctx.match![1]);
     const city = await prisma.city.findUnique({ where: { id: cityId } });
-    return `🏙️ ${city?.name}\nSelecione a Região Administrativa (RPA):`;
+    return `${city?.name}\nSelecione a Região Administrativa (RPA):`;
 });
 
 zoneMenu.chooseIntoSubmenu('z', 
@@ -166,7 +166,7 @@ zoneMenu.chooseIntoSubmenu('z',
 zoneMenu.manualRow(createBackMainMenuButtons('⬅️ Voltar para Cidades', ''));
 
 // --- 4. MAIN MENU: CITIES (First Level) ---
-const cityMenu = new MenuTemplate<BotContext>('🌍 Configuração de Alertas\nSelecione a sua cidade:');
+const cityMenu = new MenuTemplate<BotContext>('Configuração de Alertas\nSelecione a sua cidade:');
 
 cityMenu.chooseIntoSubmenu('c',
     async () => {
