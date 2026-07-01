@@ -1,6 +1,6 @@
 # Recife Nimbus
 
-**An automated flood alert system for the Recife Metropolitan Region (RMR).**
+**An automated flood alert, system and telegram bot for the Recife Metropolitan Region (RMR).**
 
 Recife and its surrounding cities are built across a vast mangrove ecosystem. During the rainy season, the combination of heavy precipitation and high ocean tides (above 2.0m) frequently overwhelms drainage systems, causing severe urban flooding. **Recife Nimbus** monitors weather and river sensor APIs across all RMR cities, cross-references them with zone coordinates, and dispatches warnings to a public Telegram channel and subscribed users before the streets flood.
 
