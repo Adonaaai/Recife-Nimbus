@@ -12,13 +12,11 @@ import { buildMessage, buildCityChannelMessage } from "./controllers/buildMessag
 import cron from "node-cron";
 import axios from "axios";
 
-// One request per time
 const plimit = pLimit(1);
 
 const timezoneValidate = validateTimezone("America/Recife");
 const timezone = timezoneValidate ? "America/Recife" : "UTC";
 
-// Cooldown Guards
 const wasRecentlySentZone = async (zoneId: number, severity: Severity): Promise<boolean> => {
     const minutes = severity === "RED" ? 60 : 180;
     const since = new Date(Date.now() - minutes * 60_000);
@@ -37,7 +35,6 @@ const wasRecentlySentCity = async (cityId: number): Promise<boolean> => {
     return existing !== null;
 };
 
-// 🌟 MOTOR ISOLADO: Pode ser invocado a qualquer momento (Boot ou Cron)
 export const executeMonitoringCycle = async () => {
     console.log(`\n[SYSTEM] ${new Date().toLocaleString()} - Iniciando ciclo de varredura de telemetria...`);
 
@@ -47,7 +44,6 @@ export const executeMonitoringCycle = async () => {
     try {
         const cities = await prisma.city.findMany();
 
-        // Headers adicionados para evitar bloqueios de segurança/timeout da APAC
         const httpOptions = { 
             timeout: 15000,
             headers: {
@@ -177,7 +173,6 @@ export const executeMonitoringCycle = async () => {
                 console.log(`   🚨 [${zone.name}] Alerta [${risk.severity}] enviado para ${sent} usuários.`);
             }
 
-            // Tratamento do Canal Geral da Cidade
             const citySupressed = await wasRecentlySentCity(city.id);
             const redZones = zoneSummaries.filter(z => z.severity === 'RED');
 
