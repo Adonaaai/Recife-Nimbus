@@ -7,7 +7,7 @@ export const T = {
 
     // Tides metres.
     TIDE_HIGH_M: 2.0,
-    TIDE_EXTREME_M: 2.5,
+    TIDE_EXTREME_M: 2.7,
 
     // Compound rain and tide.
     COMPOUND_RAIN_MM: 15,
