@@ -1,8 +1,8 @@
 # Recife Nimbus
 
-**An automated flood alert, system and telegram bot for the Recife Metropolitan Region (RMR).**
+**An automated flood alert telegram bot for the Recife Metropolitan Region (RMR).**
 
-Recife and its surrounding cities are built across a vast mangrove ecosystem. During the rainy season, the combination of heavy precipitation and high ocean tides (above 2.0m) frequently overwhelms drainage systems, causing severe urban flooding. **Recife Nimbus** monitors weather and river sensor APIs across all RMR cities, cross-references them with zone coordinates, and dispatches warnings to a public Telegram channel and subscribed users before the streets flood.
+Recife and its surrounding cities are built across a vast mangrove ecosystem. During the rainy season, the combination of heavy precipitation and high ocean tides (above 2.0m) frequently overwhelms drainage systems, causing severe urban flooding. **Recife Nimbus** monitors weather, local rain sensors and local river sensor APIs across all RMR cities, cross-references them with zone coordinates, and dispatches warnings to a public Telegram channel and subscribed users before the streets flood.
 
 ## Links & Community
 
@@ -60,14 +60,14 @@ Additional cities can be added via database seeding without code changes.
 | Layer | Technology |
 |---|---|
 | Language | TypeScript / Node.js |
-| Database | PostgreSQL (recommended: Supabase) |
+| Database | PostgreSQL |
 | ORM | Prisma |
 | Job Scheduling | node-cron |
-| Hosting | Render (bot) + Supabase (DB) |
+| Hosting | Render (bot sistem) + Supabase (DB) |
 | Tide Data | DHN tides2026.json (Porto do Recife) |
 | Telegram | Telegraf + telegraf-inline-menu |
 | Rain Forecast | Open-Meteo API (free, no auth) |
-| Real-Time Sensors | APAC ArcGIS FeatureServer |
+| Real-Time Sensors | APAC ArcGIS API |
 
 ---
 
@@ -79,8 +79,8 @@ The database uses a geographic hierarchy designed for scalable multi-city suppor
 
 ```
 City
-├── Zone (coordinates, API sensor keys, coastal flag)
-│   └── Neighborhood (the alert target unit)
+├── Zone
+│   └── Neighborhood
 ├── AlertLog (per-zone alert history)
 └── CityAlertLog (consolidated per-city channel alerts)
 ```
@@ -134,7 +134,7 @@ City
    RED — any one condition triggers:
    - Real-time rain >= 30mm/h
    - River status = "Alerta" or "Inundacao"
-   - Current tide >= 2.5m
+   - Current tide >= 2.7m
    - Rain >= 15mm/h AND tide >= 2.0m         (compound, current)
    - Forecast >= 15mm AND tide >= 2.0m (3h)  (compound, predictive)
 
