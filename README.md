@@ -1,6 +1,6 @@
 # Recife Nimbus
 
-**An automated flood alert telegram bot for the Recife Metropolitan Region (RMR).**
+**Recife Nimbus is a TypeScript flood alert system for the Recife Metropolitan Region (RMR).**
 
 Recife and its surrounding cities are built across a vast mangrove ecosystem. During the rainy season, the combination of heavy precipitation and high ocean tides (above 2.0m) frequently overwhelms drainage systems, causing severe urban flooding. **Recife Nimbus** monitors weather, local rain sensors and local river sensor APIs across all RMR cities, cross-references them with zone coordinates, and dispatches warnings to a public Telegram channel and subscribed users before the streets flood.
 
@@ -79,9 +79,10 @@ The database uses a geographic hierarchy designed for scalable multi-city suppor
 
 ```
 City
-├── Zone
+├── Zone ── AlertLog (per-zone alert history)
+│   │
 │   └── Neighborhood
-├── AlertLog (per-zone alert history)
+│
 └── CityAlertLog (consolidated per-city channel alerts)
 ```
 
@@ -117,50 +118,80 @@ City
 ### How Alerts Flow
 
 ```
-1. Cron job triggers (every 15 minutes)
+1. Application startup validates environment variables and launches the Telegram bot
    |
-2. Fetch all sensor data once (shared across zones)
-   - APAC Pluviometers   real-time rain (hora_1 mm/h)
-   - APAC Fluviometers   river levels + situacao + tendencia
-   - DHN tides2026.json  interpolated tide height now and in 3 hours
+2. Health endpoint starts on port 10000
    |
-3. For each City, for each Zone:
-   - Filter APAC sensors by zone.rainSensorNames and zone.riverBasins
-   - Fetch Open-Meteo forecast for zone coordinates (next 3 hours)
-   - If zone.isCoastal = false, tide is forced to 0m
+3. `monitorJob()` schedules the flood monitoring cycle every 30 minutes
    |
-4. Risk calculator (calculateRisk):
-
-   RED — any one condition triggers:
-   - Real-time rain >= 30mm/h
-   - River status = "Alerta" or "Inundacao"
-   - Current tide >= 2.7m
-   - Rain >= 15mm/h AND tide >= 2.0m         (compound, current)
-   - Forecast >= 15mm AND tide >= 2.0m (3h)  (compound, predictive)
-
-   YELLOW — any one condition triggers:
-   - Real-time rain >= 15mm/h
-   - River status = "Pre-alerta"
-   - Forecast rain >= 10mm (next 3h)
-   - Forecast tide >= 2.5m (next 3h)
-   - High tide >= 2.0m  (context only, never triggers alone)
+4. The monitoring cycle fetches:
+   - APAC pluviometer data for real-time rain (`hora_1`)
+   - APAC fluviometer data for river status and trends
+   - Tide table data from `src/config/tides2026.json` for current and 3-hour tide estimates
    |
-5. Zone broadcast (if severity != NONE and cooldown has passed):
-   - RED cooldown:    60 minutes
-   - YELLOW cooldown: 180 minutes
-   - Direct message sent to every active user subscribed to the zone
-   - Alert saved to AlertLog
+5. For each city and each zone:
+   - Filter APAC rain sensors using `zone.rainSensorNames`
+   - Filter APAC river stations using `zone.riverBasins`
+   - Fetch Open-Meteo 3-hour rainfall forecast for the zone coordinates
+   - If `zone.isCoastal` is false, set tide height to `0` for the zone
    |
-6. City channel broadcast (RED zones only):
-   - Consolidates all RED zones of the city into one message
-   - Sent to TELEGRAM_CHANNEL_ID
-   - City cooldown: 60 minutes
-   - Saved to CityAlertLog
+6. The risk engine (`calculateRisk`) evaluates the zone and returns a severity plus reasons
+   |
+7. If severity is `RED` or `YELLOW` and the zone cooldown has expired:
+   - Send direct Telegram messages to active users in the zone
+   - Save a zone alert record to `AlertLog`
+   |
+8. If one or more zones in a city are `RED` and the city cooldown has expired:
+   - Send a consolidated RED message to the configured Telegram channel
+   - Save a city alert record to `CityAlertLog`
 ```
 
-### Compound Rule
+### Risk calculator behavior
 
-The most important rule in the system. In Recife, high tide physically blocks the river mouths, preventing drainage from reaching the ocean. As a result, 15mm/h of rain combined with a 2.0m tide causes the same flooding as 40mm/h on a low-tide day. This rule applies both to current conditions and to the 3-hour forecast.
+`calculateRisk` receives these zone inputs:
+- `maxRainMm` — highest real-time rain from matching APAC rain sensors (`hora_1`)
+- `prolongedRain3h` — highest 3-hour historical rain from APAC sensors
+- `prolongedRain24h` — highest 24-hour accumulated rain from APAC sensors
+- `riverSituacao` — APAC river status text
+- `riverTendencia` — APAC river trend code (`S`, `M`, `D`)
+- `tideHeight` — current tide in meters (or `0` for inland zones)
+- `forecastMm` — total forecast rain over the next 3 hours from Open-Meteo
+- `forecastTide` — estimated tide height in 3 hours from DHN data
+
+The function returns `RED` if any of these conditions are true:
+- Real-time rain >= 30 mm/h
+- River status is `Alerta` or `Inundação`
+- Compound current risk: real-time rain >= 15 mm/h AND current tide >= 2.0 m
+- Compound forecast risk: forecast rain >= 15 mm AND forecast tide >= 2.0 m
+- Prolonged 24h rain >= 100 mm
+
+The function returns `YELLOW` when none of the RED conditions are met and at least one of these is true:
+- Real-time rain >= 15 mm/h
+- Total rain in the past 3 hours >= 25 mm
+- Moderate 24h accumulation >= 50 mm
+- River status is `Pré-alerta` or `Atenção`
+- Forecast rain >= 10 mm in the next 3 hours
+- Current or forecast tide >= 2.7 m
+
+### RED alert triggers
+
+Red severity is triggered immediately when any of the following conditions exist:
+- `maxRainMm >= 30` (intense real-time rain)
+- `riverSituacao === 'Alerta'` or `'Inundação'`
+- `maxRainMm >= 15` and `tideHeight >= 2.0` at the same time
+- `forecastMm >= 15` and `forecastTide >= 2.0` for the next 3 hours
+- `prolongedRain24h >= 100`
+
+### YELLOW alert triggers
+
+Yellow severity is returned when RED is not triggered and at least one of the following is true:
+- `maxRainMm >= 15`
+- `prolongedRain3h >= 25`
+- `prolongedRain24h >= 50`
+- `riverSituacao === 'Pré-alerta'` or `'Atenção'`
+- `forecastMm >= 10`
+- `forecastTide >= 2.7`
+- `tideHeight >= 2.7`
 
 ---
 
@@ -231,33 +262,29 @@ Tracks consolidated city-level RED alerts sent to the public channel, including 
 
 ---
 
-## Development
-
-### Prerequisites
-
-- Node.js 18+
-- PostgreSQL (local via Docker or hosted via Supabase)
-- Telegram bot token (via BotFather)
-- Telegram channel ID
-
 ### Environment Variables
 
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/recife_nimbus
-TELEGRAM_BOT_TOKEN=your_bot_token
-TELEGRAM_CHANNEL_ID=your_channel_id
+DATABASE_URL=postgresql://user:password@localhost:5432/projectName
+TELEGRAM_API_TOKEN=your_bot_token
+TELEGRAM_ALERT_CHANNEL_ID=your_channel_id
 ```
 
-### Setup
+> `TELEGRAM_API_TOKEN` is used by `src/lib/bot.ts`
+> `TELEGRAM_ALERT_CHANNEL_ID` is used by `src/cron/floodMonitoring.ts`
 
-```bash
-git clone https://github.com/Adonaaai/Recife-Nimbus
-cd Recife-Nimbus
-npm install
-npx prisma migrate dev
-npx prisma db seed
-npm run dev
-```
+---
+
+`npm run dev` starts the bot, schedules the monitoring job, exposes a health endpoint, and runs an immediate monitoring cycle on startup.
+
+---
+
+## Notes
+
+- The active cron schedule is every 30 minutes (`src/cron/floodMonitoring.ts`).
+- Tide interpolation is based on `src/config/tides2026.json`.
+- Inland zones bypass tide-based compound risk by using `tideHeight = 0`.
+- The repository currently has no dedicated automated test suite configured.
 
 ---
 
@@ -266,10 +293,8 @@ npm run dev
 Contributions are welcome. Potential areas for enhancement:
 
 - [ ] Historical flood pattern analysis
-- [ ] PWA push notifications
 - [ ] WhatsApp integration
 - [ ] SMS fallback for critical alerts
-- [ ] Predictive ML model for alert accuracy
 
 ### Pull Request Process
 

@@ -37,8 +37,6 @@ export const calculateRisk = (
         riverSituacao === 'Alerta' ||
         riverSituacao === 'Inundação';
 
-    const tideAlerted = tideHeight >= T.TIDE_EXTREME_M;
-
     // Thriggered if we already have high rains and tides.
     const currentCompoundAlerted = 
         maxRainMm >= T.COMPOUND_RAIN_MM &&
@@ -49,7 +47,8 @@ export const calculateRisk = (
         forecastMm >= T.FORECAST_COMPOUND_RAIN_MM &&
         forecastTide >= T.COMPOUND_TIDE_M;
 
-    const prolonged24hAlerted = prolongedRain24h >= T.PROLONGED_RAIN_24H_MM;
+    const prolonged24hRedAlerted = prolongedRain24h >= T.PROLONGED_RAIN_24H_RED_MM;
+    const prolonged24hYellowAlerted = prolongedRain24h >= T.PROLONGED_RAIN_24H_MM;
     // ========================================================================
 
     if (rainAlerted) reasons.push(`Chuva intensa: ${maxRainMm}mm/h`);
@@ -59,13 +58,12 @@ export const calculateRisk = (
         reasons.push(`Rio em ${riverSituacao} ${trendLabel}`.trim());
     };
 
-    if (tideAlerted) reasons.push(`Maré Extrema: ${tideHeight}m`);
     if (currentCompoundAlerted) reasons.push(`Risco de Alagamentos: ${maxRainMm}mm/h e maré ${tideHeight}m`);
     if (forecastCompoundAlerted) reasons.push(`Risco de Alagamentos ${forecastMm}mm/h e maré ${forecastTide}m  Previstos para as proximas 3 horas`);
-    if (prolonged24hAlerted) reasons.push(`Chuva acumulada 24h: ${prolongedRain24h}mm`);
+    if (prolonged24hRedAlerted) reasons.push(`Chuva acumulada 24h: ${prolongedRain24h}mm`);
 
     // Checking if any of the conditions is thriggered.
-    if (rainAlerted || riverAlerted || tideAlerted || currentCompoundAlerted || forecastCompoundAlerted || prolonged24hAlerted) {
+    if (rainAlerted || riverAlerted || currentCompoundAlerted || forecastCompoundAlerted || prolonged24hRedAlerted) {
         return {
             severity: 'RED',
             maxRainMm,
@@ -87,18 +85,20 @@ export const calculateRisk = (
     const prolonged3hYellow =
         prolongedRain3h >= T.PROLONGED_RAIN_3H_MM;
 
+    const prolonged24hYellow =
+        prolongedRain24h >= T.PROLONGED_RAIN_24H_MM;
+
     // River is being watched — not dangerous yet but heading there.
     const riverYellow =
-        riverSituacao === 'Pré-alerta';
+        riverSituacao === 'Pré-alerta' ||
+        riverSituacao === 'Atenção';
 
     const highForecast =
         forecastMm >= T.FORECAST_MM;
   
-    // ≥2.0m — drainage weakening, adds context to the other triggers.
     const highTide = 
-        tideHeight >= T.TIDE_HIGH_M;
+        tideHeight >= T.TIDE_EXTREME_M;
 
-    // Extreme Tide in next 3 hours.
     const extremeForecastTide = 
         forecastTide >= T.TIDE_EXTREME_M; 
 
@@ -106,17 +106,18 @@ export const calculateRisk = (
 
     if (modRain) reasons.push(`Chuva moderada: ${maxRainMm}mm/h`);
     if (prolonged3hYellow) reasons.push(`Chuva acumulada 3h: ${prolongedRain3h}mm`);
+    if (prolonged24hYellow) reasons.push(`Chuva acumulada 24h: ${prolongedRain24h}mm`);
 
     if (riverYellow) {
         // Using .trim() to drop final spaces if trendLabel === "".
-        reasons.push(`Rio em Pré-alerta ${trendLabel}`.trim());
+        reasons.push(`Rio em ${riverSituacao} ${trendLabel}`.trim());
     };
 
     if (highForecast) reasons.push(`Previsão: ${forecastMm}mm nas próximas 3h`);
-    if (highTide)     reasons.push(`Maré alta: ${tideHeight}m`);
-    if (extremeForecastTide) reasons.push(`Maré Extrema nas proximas 3 horas: ${forecastTide}m`);
+    if (highTide)     reasons.push(`Maré extrema: ${tideHeight}m`);
+    if (extremeForecastTide) reasons.push(`Maré extrema nas proximas 3 horas: ${forecastTide}m`);
 
-    if (modRain || prolonged3hYellow || riverYellow || highForecast || extremeForecastTide) {
+    if (modRain || prolonged3hYellow || prolonged24hYellow || riverYellow || highForecast || highTide || extremeForecastTide) {
         return {
             severity: 'YELLOW',
             maxRainMm,

@@ -1,7 +1,7 @@
 import "dotenv/config";
 import pLimit from 'p-limit'
 import { escapeMd, validateTimezone, sanitizeJsonString, getErrorMessage } from '../lib/validators';
-import { RainSensor, RiverSensor, Severity, SEVERITY_ORDER } from "./types/types.ts";
+import { RainSensor, RiverSensor, Severity, SEVERITY_ORDER, T } from "./types/types.ts";
 import { getForecastTideHeight } from "./controllers/getForecastTideHeight.ts";
 import { getCurrentTideHeight } from "./controllers/getCurrentTideHeight.ts";
 import { calculateRisk } from "./controllers/calculateRisk.ts";
@@ -18,7 +18,7 @@ const timezoneValidate = validateTimezone("America/Recife");
 const timezone = timezoneValidate ? "America/Recife" : "UTC";
 
 const wasRecentlySentZone = async (zoneId: number, severity: Severity): Promise<boolean> => {
-    const minutes = severity === "RED" ? 60 : 180;
+    const minutes = severity === "RED" ? T.COOLDOWN_RED_MIN : T.COOLDOWN_YELLOW_MIN;
     const since = new Date(Date.now() - minutes * 60_000);
     const existing = await prisma.alertLog.findFirst({
         where: { zoneId, severity, triggeredAt: { gte: since } },
@@ -27,7 +27,7 @@ const wasRecentlySentZone = async (zoneId: number, severity: Severity): Promise<
 };
 
 const wasRecentlySentCity = async (cityId: number): Promise<boolean> => {
-    const minutes = 60;
+    const minutes = T.COOLDOWN_RED_MIN;
     const since = new Date(Date.now() - minutes * 60_000);
     const existing = await prisma.cityAlertLog.findFirst({
         where: { cityId, triggeredAt: { gte: since } }

@@ -3,6 +3,7 @@ export const T = {
   // accumulated/prolonged totals
   PROLONGED_RAIN_3H_MM: 25,
   PROLONGED_RAIN_24H_MM: 50,
+  PROLONGED_RAIN_24H_RED_MM: 100,
 
   // Rain intensity thresholds
   RAIN_RED_MM: 30,
