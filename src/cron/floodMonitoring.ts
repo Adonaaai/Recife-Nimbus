@@ -82,7 +82,7 @@ export const executeMonitoringCycle = async () => {
 
                 const zoneRainSensor: RainSensor[] = rainSensors.filter((sensor) => {
                     return zone.rainSensorNames.some((dbName: string) => {
-                        const isOnline = sensor.attributes.hora_1 >= 0;
+                        const isOnline = sensor.attributes.hora_3 >= 0;
                         return isOnline && dbName === sensor.attributes.nome;
                     });
                 });
@@ -99,6 +99,14 @@ export const executeMonitoringCycle = async () => {
                     ? Math.max(...zoneRainSensor.map((s) => s.attributes.hora_1))
                     : 0;
 
+                const prolongedRain3h = zoneRainSensor.length > 0
+                    ? Math.max(...zoneRainSensor.map((s) => s.attributes.horas_3 ?? s.attributes.hora_3))
+                    : 0;
+
+                const prolongedRain24h = zoneRainSensor.length > 0
+                    ? Math.max(...zoneRainSensor.map((s) => s.attributes.horas_24 ?? s.attributes.hora_24))
+                    : 0;
+
                 const worstRiverStation = zoneRiverSensors.length > 0
                     ? zoneRiverSensors.reduce((worst, sensor) => {
                         const currentScore = SEVERITY_ORDER[sensor.attributes.situacao as keyof typeof SEVERITY_ORDER] ?? 0;
@@ -112,10 +120,12 @@ export const executeMonitoringCycle = async () => {
 
                 const forecastMm = await plimit(() => getForecastRainMm(zone.latitude, zone.longitude));
 
-                console.log(`   📡 [${zone.name}] Chuva: ${maxRainMm}mm | Rio: ${riverSituacao ?? "Normal"} | Maré: ${localCurrentTide}m`);
+                console.log(`   📡 [${zone.name}] Chuva 1h: ${maxRainMm}mm | 3h: ${prolongedRain3h}mm | 24h: ${prolongedRain24h}mm | Rio: ${riverSituacao ?? "Normal"} | Maré: ${localCurrentTide}m`);
 
                 const risk = calculateRisk(
                     maxRainMm,
+                    prolongedRain3h,
+                    prolongedRain24h,
                     riverSituacao,
                     riverTendencia,
                     localCurrentTide,

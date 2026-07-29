@@ -1,24 +1,28 @@
 // Thresholds
 export const T = {
-    // Rains millimetres.
-    RAIN_RED_MM: 30,
-    RAIN_YELLOW_MM: 15,
-    FORECAST_MM: 10,
+  // accumulated/prolonged totals
+  PROLONGED_RAIN_3H_MM: 25,
+  PROLONGED_RAIN_24H_MM: 50,
 
-    // Tides metres.
-    TIDE_HIGH_M: 2.0,
-    TIDE_EXTREME_M: 2.7,
+  // Rain intensity thresholds
+  RAIN_RED_MM: 30,
+  RAIN_YELLOW_MM: 15,
+  FORECAST_MM: 10,
 
-    // Compound rain and tide.
-    COMPOUND_RAIN_MM: 15,
-    COMPOUND_TIDE_M: 2.0,
+  // Tides metres.
+  TIDE_HIGH_M: 2.0,
+  TIDE_EXTREME_M: 2.7,
 
-    // forecast compound rain
-    FORECAST_COMPOUND_RAIN_MM: 2,
+  // Compound rain and tide.
+  COMPOUND_RAIN_MM: 15,
+  COMPOUND_TIDE_M: 2.0,
 
-    // Cooldowns for no spamming.
-    COOLDOWN_RED_MIN: 60,
-    COOLDOWN_YELLOW_MIN: 180
+  // forecast compound rain (updated from 2mm to a realistic value)
+  FORECAST_COMPOUND_RAIN_MM: 15,
+
+  // Cooldowns for no spamming.
+  COOLDOWN_RED_MIN: 60,
+  COOLDOWN_YELLOW_MIN: 180,
 
   // "as const" for never change in the runtime.
 } as const;
@@ -29,14 +33,24 @@ export interface RainSensor {
     // The sensor name, e.g. "[CEMADEN] Areias"
     nome: string,
 
-    // Rain in the LAST 1 HOUR in millimetres.
-    hora_1: number,
-
      // The river basin this sensor belongs to, e.g. "Capibaribe", "GL2"
     bacia: string,
 
     // City name, e.g. "Recife", "Jaboatão dos Guararapes"
     municipio: string
+
+    // Rain in the LAST 1 HOUR in millimetres.
+    hora_1: number;
+
+    // Rain in the LAST 3 HOURS in millimetres (APAC field often called 'horas_3' or 'hora_3').
+    // Mark optional to tolerate sensors that don't provide it.
+    horas_3: number;
+    hora_3: number;
+
+    // Rain in the LAST 24 HOURS in millimetres (APAC field often called 'horas_24' or 'hora_24').
+    horas_24: number;
+    hora_24: number;
+
   }
 };
 
@@ -59,6 +73,8 @@ export type Severity = 'NONE' | 'YELLOW' | 'RED';
 export interface ZoneRisk {
   severity: Severity;
   maxRainMm: number;
+  prolongedRain3h: number;
+  prolongedRain24h: number;
   riverSituacao: string | null; // null if doesn't exist river in this zone.
   riverTendencia: string | null
   tideHeight: number;
@@ -80,3 +96,5 @@ export const SEVERITY_ORDER = {
   'Alerta':     2,
   "Inundação": 3
 };
+
+
