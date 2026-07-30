@@ -2,7 +2,7 @@
 
 **Recife Nimbus is a TypeScript flood alert system for the Recife Metropolitan Region (RMR).**
 
-Recife and its surrounding cities are built across a vast mangrove ecosystem. During the rainy season, the combination of heavy precipitation and high ocean tides frequently overwhelms drainage systems, causing severe urban flooding. **Recife Nimbus** monitors weather, local rain sensors and local river sensor APIs across all RMR cities, cross-references them with zone coordinates, and dispatches warnings to a public Telegram channel and subscribed users before the streets flood.
+Recife and its surrounding is highly vulnerable to flooding due to its unique geography. During the rainy season, the combination of heavy precipitation and high ocean tides frequently overwhelms drainage systems, causing severe urban flooding. **Recife Nimbus** monitors weather, local rain sensors and local river sensor APIs across all RMR cities, cross-references them with zone coordinates, and dispatches warnings to a public Telegram channel and subscribed users before the streets flood.
 
 ## Links & Community
 
