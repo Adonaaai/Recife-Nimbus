@@ -61,6 +61,7 @@ export const calculateRisk = (
     if (currentCompoundAlerted) reasons.push(`Risco de Alagamentos: ${maxRainMm}mm/h e maré ${tideHeight}m`);
     if (forecastCompoundAlerted) reasons.push(`Risco de Alagamentos ${forecastMm}mm/h e maré ${forecastTide}m  Previstos para as proximas 3 horas`);
     if (prolonged24hRedAlerted) reasons.push(`Chuva acumulada 24h: ${prolongedRain24h}mm`);
+    if (prolonged24hYellowAlerted) reasons.push(`Chuva acumulada 24h: ${prolongedRain24h}mm`);
 
     // Checking if any of the conditions is thriggered.
     if (rainAlerted || riverAlerted || currentCompoundAlerted || forecastCompoundAlerted || prolonged24hRedAlerted) {

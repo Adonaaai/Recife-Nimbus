@@ -170,7 +170,9 @@ export const executeMonitoringCycle = async () => {
                     data: {
                         zoneId: zone.id,
                         severity: risk.severity,
-                        rainLevel: risk.maxRainMm,
+                        rain1hMm: risk.maxRainMm,
+                        rain3hMm: risk.prolongedRain3h,
+                        rain24hMm: risk.prolongedRain24h,
                         tideLevel: risk.tideHeight,
                         forecastRainMm: risk.forecastMm,
                         forecastTide: risk.forecastTide,

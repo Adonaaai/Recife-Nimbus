@@ -94,7 +94,10 @@ model AlertLog {
   zoneId        Int      
   
   // The Triple-Threat Data at the exact moment of the alert
-  rainLevel      Float?   // Real-time from APAC (or forecast amount)
+  rain1hMm       Float?   // Real-time max rain used for alert decisions
+  rain3hMm       Float?   // APAC 3-hour accumulated rain
+  rain24hMm      Float?   // APAC 24-hour accumulated rain
+  rainLevel      Float?   // old "rain1hMm"  kept for backward compatibility
   tideLevel      Float?   // From Tide API/PDF
   forecastTide   Float?
   forecastRainMm Float?  // Predicted rain (Open-Meteo) at alert time
