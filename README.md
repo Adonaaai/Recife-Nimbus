@@ -2,7 +2,7 @@
 
 **Recife Nimbus is a TypeScript flood alert system for the Recife Metropolitan Region (RMR).**
 
-Recife and its surrounding cities are built across a vast mangrove ecosystem. During the rainy season, the combination of heavy precipitation and high ocean tides (above 2.0m) frequently overwhelms drainage systems, causing severe urban flooding. **Recife Nimbus** monitors weather, local rain sensors and local river sensor APIs across all RMR cities, cross-references them with zone coordinates, and dispatches warnings to a public Telegram channel and subscribed users before the streets flood.
+Recife and its surrounding is highly vulnerable to flooding due to its unique geography. During the rainy season, the combination of heavy precipitation and high ocean tides frequently overwhelms drainage systems, causing severe urban flooding. **Recife Nimbus** monitors weather, local rain sensors and local river sensor APIs across all RMR cities, cross-references them with zone coordinates, and dispatches warnings to a public Telegram channel and subscribed users before the streets flood.
 
 ## Links & Community
 
@@ -34,8 +34,8 @@ Recife and its surrounding cities are built across a vast mangrove ecosystem. Du
 - **Public Channel:** Broadcasts consolidated RED alerts to a dedicated public Telegram channel per city.
 - **Direct Messages:** Sends zone-level alerts directly to subscribed users via DM.
 - **Severity Levels:**
-  - **YELLOW** (Predictive): Forecast indicates dangerous rain or tide conditions within 3 hours.
-  - **RED** (Real-Time Critical): APAC sensors confirm active flooding conditions.
+  - **YELLOW** (Predictive): Forecast indicates dangerous rain or tide conditions coming.
+  - **RED** (Real-Time Critical): System confirm active flooding conditions.
 
 ### Multi-City RMR Coverage
 The system supports the full Recife Metropolitan Region:
@@ -125,7 +125,7 @@ City
 3. `monitorJob()` schedules the flood monitoring cycle every 30 minutes
    |
 4. The monitoring cycle fetches:
-   - APAC pluviometer data for real-time rain (`hora_1`)
+   - APAC pluviometer data for real-time rain
    - APAC fluviometer data for river status and trends
    - Tide table data from `src/config/tides2026.json` for current and 3-hour tide estimates
    |
@@ -214,7 +214,7 @@ src/
 │   ├── tides2026.json                DHN tide table (Porto do Recife)
 │   └── neighborhoods-official.json  Neighborhoods reference data
 └── cron/
-    ├── floodMonitoring.ts            Main cron job (runs every 15 minutes)
+    ├── floodMonitoring.ts            Main cron job (runs every 30 minutes)
     ├── types/
     │   └── types.ts                  Interfaces, thresholds and constants
     └── controllers/
@@ -223,11 +223,6 @@ src/
         ├── getCurrentTideHeight.ts   Interpolates current tide height
         ├── getForecastTideHeight.ts  Interpolates tide height in 3 hours
         └── getForecastRainMm.ts      Open-Meteo 3-hour rain forecast
-
-prisma/
-├── schema.prisma                     Database models
-├── seed.ts                           Seeds RMR cities, zones and neighborhoods
-└── migrations/                       Auto-generated migration history
 ```
 
 ### Controller Chain
