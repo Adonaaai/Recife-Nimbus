@@ -257,23 +257,6 @@ Tracks consolidated city-level RED alerts sent to the public channel, including 
 
 ---
 
-### Environment Variables
-
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/projectName
-TELEGRAM_API_TOKEN=your_bot_token
-TELEGRAM_ALERT_CHANNEL_ID=your_channel_id
-```
-
-> `TELEGRAM_API_TOKEN` is used by `src/lib/bot.ts`
-> `TELEGRAM_ALERT_CHANNEL_ID` is used by `src/cron/floodMonitoring.ts`
-
----
-
-`npm run dev` starts the bot, schedules the monitoring job, exposes a health endpoint, and runs an immediate monitoring cycle on startup.
-
----
-
 ## Notes
 
 - The active cron schedule is every 30 minutes (`src/cron/floodMonitoring.ts`).
