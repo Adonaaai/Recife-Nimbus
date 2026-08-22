@@ -51,13 +51,28 @@ export const executeMonitoringCycle = async () => {
             }
         };
 
-        const [rainRes, riverRes] = await Promise.all([
+        const [rainResult, riverResult] = await Promise.allSettled([
             axios.get(APAC_RAIN_URL, httpOptions),
             axios.get(APAC_RIVER_URL, httpOptions),
         ]);
 
-        const rainSensors: RainSensor[] = rainRes.data.features ?? [];
-        const riverSensors: RiverSensor[] = riverRes.data.features ?? [];
+        const rainSensors: RainSensor[] = rainResult.status === "fulfilled"
+            ? rainResult.value.data.features ?? []
+            : [];
+        const riverSensors: RiverSensor[] = riverResult.status === "fulfilled"
+            ? riverResult.value.data.features ?? []
+            : [];
+
+        if (rainResult.status === "rejected") {
+            console.error(`[APAC] Falha ao carregar chuva: ${getErrorMessage(rainResult.reason)}`);
+        }
+        if (riverResult.status === "rejected") {
+            console.error(`[APAC] Falha ao carregar rios: ${getErrorMessage(riverResult.reason)}`);
+        }
+        if (rainResult.status === "rejected" || riverResult.status === "rejected") {
+            console.error("[APAC] Ciclo cancelado para evitar avaliar risco com dados incompletos.");
+            return;
+        }
 
         console.log(`[APAC] Carregados ${rainSensors.length} sensores de chuva e ${riverSensors.length} estações de rios.`);
 
