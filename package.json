@@ -8,7 +8,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "--use-system-ca tsx watch src/index.ts"
+    "dev": "node --use-system-ca ./node_modules/.bin/tsx watch src/index.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.7.0",
